@@ -1,7 +1,7 @@
 {
   "name": "Rajasthan MO PYQ",
   "short_name": "MO PYQ",
-  "start_url": "./Rajasthan_MO_PYQ_PWA.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#111827",
@@ -19,5 +19,7 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "scope": "./",
+  "id": "./"
 }
