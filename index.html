@@ -364,6 +364,10 @@ async function loadUserData(){
 
 async function refreshAttemptHistory(){
   if(!currentUser) return;
+  // Clear in-memory history before loading so one account's data can never
+  // remain visible if a later account's history request fails.
+  attemptedIds=new Set();
+  attemptHistory=new Map();
   const rows=[];
   const pageSize=1000;
   for(let offset=0;;offset+=pageSize){
@@ -374,7 +378,14 @@ async function refreshAttemptHistory(){
       .order("attempted_at",{ascending:true})
       .order("question_id",{ascending:true})
       .range(offset,offset+pageSize-1);
-    if(error){console.error(error);return;}
+    if(error){
+      console.error(error);
+      renderHistoryStats();
+      $("historyStats").setAttribute("role","status");
+      $("historyStats").dataset.loadError="true";
+      $("historyStats").insertAdjacentHTML("beforeend","<span>History could not be loaded. Check your connection and reload.</span>");
+      return;
+    }
     rows.push(...(data||[]));
     if(!data||data.length<pageSize)break;
   }
@@ -385,6 +396,8 @@ async function refreshAttemptHistory(){
     attemptHistory.set(row.question_id,row);
   });
   renderHistoryStats();
+  $("historyStats").removeAttribute("role");
+  delete $("historyStats").dataset.loadError;
 }
 function renderHistoryStats(){
   const total=800, attempted=attemptedIds.size;
