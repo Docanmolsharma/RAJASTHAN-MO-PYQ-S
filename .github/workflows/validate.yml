@@ -96,6 +96,8 @@ jobs:
               "license checks fail closed": 'start.disabled=true;' in html and 'licenseActive=false;' in html,
               "license expiry is checked": 'new Date(v.expires_at).getTime()>Date.now()' in html,
               "all history pages are loaded": '.range(offset,offset+pageSize-1)' in html,
+              "history is cleared before loading another account": html.index('attemptedIds=new Set();', html.index('async function refreshAttemptHistory')) < html.index('.from("question_attempts")', html.index('async function refreshAttemptHistory')),
+              "history load failures are visible": 'History could not be loaded. Check your connection and reload.' in html,
               "question status filters exist": all(f'mode==="{mode}"' in html for mode in ("all","unattempted","attempted","incorrect","correct")),
               "license redemption recovers from errors": 'Activation failed due to a connection error' in html,
               "unanswered questions are distinguished": "Not answered" in html and "unanswered" in html,
