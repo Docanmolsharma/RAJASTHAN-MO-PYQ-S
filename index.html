@@ -125,7 +125,7 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CORTEX">
-<link rel="icon" type="image/svg+xml" href="cortex-icon.svg?v=13">\n<link rel="apple-touch-icon" href="cortex-icon.svg?v=13">
+<link rel="icon" type="image/svg+xml" href="cortex-icon.svg?v=14">\n<link rel="apple-touch-icon" href="cortex-icon.svg?v=14">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* Review summary and consistent answer-status colors */
@@ -328,7 +328,7 @@ hr{border-color:#e4ebea!important}
 <style id="cortex-shared-icon-refinement">
 #auth #loginHero .login-brand-mark{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:50%!important;overflow:visible!important}
 #auth #loginHero .login-brand-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:50%;filter:drop-shadow(0 5px 15px rgba(8,35,49,.22))}
-.cortex-splash-logo{object-fit:contain;border-radius:50%;background:transparent}
+.cortex-splash-logo{object-fit:contain;border-radius:50%;background:transparent;filter:drop-shadow(0 0 18px rgba(42,174,235,.2));animation:splashMarkFloat 4s ease-in-out infinite}@keyframes splashMarkFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 </style>
 </head>
 <body>
@@ -341,7 +341,7 @@ hr{border-color:#e4ebea!important}
 .cortex-orbit{position:absolute;width:min(78vw,360px);aspect-ratio:1;border:1px solid #1c79ad22;border-radius:50%;animation:cortexSpin 18s linear infinite}
 .cortex-orbit:before,.cortex-orbit:after{content:"";position:absolute;inset:10%;border:1px solid #d9a75224;border-radius:50%;transform:rotate(53deg) scaleX(.55)}
 .cortex-orbit:after{transform:rotate(-42deg) scaleX(.72)}
-.cortex-splash-logo{position:relative;width:min(64vw,280px);height:min(64vw,280px);filter:drop-shadow(0 0 16px #168de255);overflow:visible}
+.cortex-splash-logo{position:relative;width:min(64vw,280px);height:min(64vw,280px);filter:drop-shadow(0 0 16px #168de255);overflow:visible;animation:splashMarkFloat 4s ease-in-out infinite}
 .neural-line{fill:none;stroke:#168de2;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:210;stroke-dashoffset:210;animation:neuralDraw 1.65s ease-out forwards,blueGlow 2.4s ease-in-out 1.6s infinite}
 .gold-line{fill:none;stroke:url(#cortexGold);stroke-width:4.5;stroke-linecap:round;stroke-dasharray:360;stroke-dashoffset:360;animation:goldDraw 2.2s cubic-bezier(.2,.7,.2,1) .7s forwards,goldGlow 2.4s ease-in-out 2.7s infinite}
 .neural-node{fill:#8bdcff;filter:url(#blueHalo);opacity:0;animation:nodeLight .5s ease-out forwards}
@@ -364,7 +364,7 @@ hr{border-color:#e4ebea!important}
 </style>
 <div id="cortexSplash" role="status" aria-label="CORTEX is loading">
  <div class="cortex-orbit" aria-hidden="true"></div>
- <img class="cortex-splash-logo" src="cortex-emblem.svg" alt="" aria-hidden="true"> <div class="cortex-splash-name">CORTEX</div><div class="cortex-splash-tag">Where Knowledge Evolves</div><div class="cortex-loader"></div><div class="cortex-splash-caption">Illuminate your knowledge</div>
+ <img class="cortex-splash-logo" src="cortex-splash.svg?v=14" alt="" aria-hidden="true"> <div class="cortex-splash-name">CORTEX</div><div class="cortex-splash-tag">Where Knowledge Evolves</div><div class="cortex-loader"></div><div class="cortex-splash-caption">Illuminate your knowledge</div>
 </div>
 <script>
 (function(){
@@ -384,7 +384,7 @@ hr{border-color:#e4ebea!important}
 <main>
 <section id="auth" class="card">
   <div id="loginHero" style="text-align:center;max-width:520px;margin:auto">
-    <div class="login-brand-mark" aria-hidden="true"><img src="cortex-emblem.svg" alt="" /></div>
+    <div class="login-brand-mark" aria-hidden="true"><img src="cortex-emblem.svg?v=14" alt="" /></div>
     <div class="login-brand-name">CORTEX</div>
     <div class="login-brand-tag">WHERE KNOWLEDGE EVOLVES</div>
     <div class="login-quote">
