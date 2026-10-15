@@ -1,16 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
 <defs>
- <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0c7" stop-opacity=".28"/><stop offset=".48" stop-color="#e7bb70" stop-opacity=".58"/><stop offset="1" stop-color="#bb813c" stop-opacity=".36"/></linearGradient>
- <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#50d9ff" stop-opacity=".95"/><stop offset="1" stop-color="#1685d3" stop-opacity=".7"/></linearGradient>
- <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0c7" stop-opacity=".18"/><stop offset=".5" stop-color="#e7bb70" stop-opacity=".48"/><stop offset="1" stop-color="#bb813c" stop-opacity=".24"/></linearGradient>
+ <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#74ddff" stop-opacity=".88"/><stop offset="1" stop-color="#1685d3" stop-opacity=".58"/></linearGradient>
+ <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
 <g fill="none" stroke-linecap="round" stroke-linejoin="round">
- <path d="M214 55 A108 108 0 1 0 214 265" stroke="url(#gold)" stroke-width="10" stroke-opacity=".8"/>
- <path d="M119 75 C88 79 63 108 68 135 C43 151 48 180 68 194 C63 220 84 239 106 234 C119 254 146 254 159 236 C180 230 187 210 178 193 C194 177 188 151 169 142 C177 116 154 92 134 98 Z" stroke="url(#blue)" stroke-width="2.2"/>
- <path d="M119 75 L125 111 L94 132 L113 158 L83 181 L106 234 M125 111 L154 119 L169 142 L142 165 L178 193 M94 132 L142 165 L113 158 L135 202 L159 236 M83 181 L113 158 M154 119 L145 91 M142 165 L135 202 L106 234 M142 165 L169 142" stroke="#64d9fa" stroke-opacity=".75" stroke-width="1.5"/>
- <path d="M214 55 A108 108 0 1 0 214 265" stroke="#f3cf8d" stroke-opacity=".2" stroke-width="2"/>
+ <path d="M218 57 A105 105 0 1 0 218 263" stroke="url(#gold)" stroke-width="7" stroke-opacity=".72"/>
+ <path d="M120 78 C94 81 72 105 75 132 C54 148 56 176 75 191 C71 213 89 231 109 227 C122 246 145 246 158 230 C176 224 182 206 174 191 C190 175 184 153 167 144 C174 122 154 99 135 103 Z" stroke="url(#blue)" stroke-width="1.8"/>
+ <path d="M120 78 L126 111 L96 132 L113 157 L85 179 L109 227 M126 111 L153 120 L167 144 L143 164 L174 191 M96 132 L143 164 L113 157 L135 200 L158 230 M85 179 L113 157 M153 120 L145 95 M143 164 L135 200 L109 227 M143 164 L167 144" stroke="#75dfff" stroke-opacity=".66" stroke-width="1.25"/>
 </g>
-<g fill="#bdefff" filter="url(#glow)">
- <circle cx="119" cy="75" r="4"/><circle cx="125" cy="111" r="4.5"/><circle cx="154" cy="119" r="4"/><circle cx="169" cy="142" r="4.5"/><circle cx="142" cy="165" r="5"/><circle cx="178" cy="193" r="3.5"/><circle cx="135" cy="202" r="4"/><circle cx="106" cy="234" r="4"/><circle cx="83" cy="181" r="3.5"/><circle cx="94" cy="132" r="4"/><circle cx="159" cy="236" r="4"/>
+<g fill="#c9f2ff" filter="url(#glow)">
+ <circle cx="120" cy="78" r="3.3"/><circle cx="126" cy="111" r="3.8"/><circle cx="153" cy="120" r="3.2"/><circle cx="167" cy="144" r="3.8"/><circle cx="143" cy="164" r="4.2"/><circle cx="174" cy="191" r="3"/><circle cx="135" cy="200" r="3.3"/><circle cx="109" cy="227" r="3.5"/><circle cx="85" cy="179" r="3"/><circle cx="96" cy="132" r="3.2"/><circle cx="158" cy="230" r="3.3"/>
 </g>
 </svg>
