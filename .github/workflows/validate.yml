@@ -1,0 +1,121 @@
+name: Validate app JavaScript
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [license-ui-work]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Extract inline JavaScript and check syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.inline = []
+                  self.active = False
+                  self.external = False
+                  self.parts = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() == "script":
+                      self.active = True
+                      self.external = any(k.lower() == "src" for k, _ in attrs)
+                      self.parts = []
+
+              def handle_data(self, data):
+                  if self.active and not self.external:
+                      self.parts.append(data)
+
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script" and self.active:
+                      if not self.external:
+                          self.inline.append("".join(self.parts))
+                      self.active = False
+                      self.external = False
+                      self.parts = []
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          parser = Scripts()
+          parser.feed(html)
+          scripts = [s for s in parser.inline if s.strip()]
+          if not scripts:
+              raise SystemExit("No inline scripts found in index.html")
+          out = Path("/tmp/mo-js-check")
+          out.mkdir(exist_ok=True)
+          for i, script in enumerate(scripts, 1):
+              (out / f"script-{i}.js").write_text(script, encoding="utf-8")
+          print(f"Extracted {len(scripts)} inline scripts.")
+          PY
+      - name: Check critical HTML structure and accidental secrets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from collections import Counter
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          class IDs(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.values = []
+              def handle_starttag(self, tag, attrs):
+                  self.values.extend(v for k, v in attrs if k.lower() == "id")
+
+          parser = IDs()
+          parser.feed(html)
+          duplicates = [name for name, count in Counter(parser.values).items() if count > 1]
+          if duplicates:
+              raise SystemExit("Duplicate HTML IDs: " + ", ".join(sorted(duplicates)))
+
+          required = {
+              "auth", "authEmail", "authPassword", "forgotBtn", "recoveryBox",
+              "savePasswordBtn", "setup", "licenseStatus", "licenseKey",
+              "redeemBtn", "adminCard", "startBtn", "statusFilter", "review"
+          }
+          missing = sorted(required - set(parser.values))
+          if missing:
+              raise SystemExit("Missing required UI IDs: " + ", ".join(missing))
+
+          if re.search(r"service_role|sb_secret_", html, re.I):
+              raise SystemExit("Potential server-side secret found in client HTML")
+
+          checks = {
+              "license checks fail closed": 'start.disabled=true;' in html and 'licenseActive=false;' in html,
+              "license expiry is checked": 'new Date(v.expires_at).getTime()>Date.now()' in html,
+              "all history pages are loaded": '.range(offset,offset+pageSize-1)' in html,
+              "history is cleared before loading another account": html.index('attemptedIds=new Set();', html.index('async function refreshAttemptHistory')) < html.index('.from("question_attempts")', html.index('async function refreshAttemptHistory')),
+              "history load failures are visible": 'History could not be loaded. Check your connection and reload.' in html,
+              "test start requires loaded history": 'if(!historyReady){alert("Attempt history has not loaded.' in html,
+              "submission waits for pending answer saves": 'await Promise.allSettled([...pendingAttemptSaves])' in html,
+              "answer-save network errors are handled": 'Your answer is selected, but saving could not be confirmed.' in html,
+              "password reset always restores button": 'finally{$("forgotBtn").disabled=false;}' in html,
+              "admin key generation always restores button": 'finally{$("generateKeysBtn").disabled=false;}' in html,
+              "question status filters exist": all(f'mode==="{mode}"' in html for mode in ("all","unattempted","attempted","incorrect","correct")),
+              "license redemption recovers from errors": 'Activation failed due to a connection error' in html,
+              "unanswered questions are distinguished": "Not answered" in html and "unanswered" in html,
+          }
+          failed = [label for label, passed in checks.items() if not passed]
+          if failed:
+              raise SystemExit("App behavior regression checks failed: " + ", ".join(failed))
+
+          print(f"HTML structure passed: {len(parser.values)} IDs, no duplicates.")
+          print("Critical auth, license, admin, filter and review controls are present.")
+          print("Behavior regression checks passed: " + ", ".join(checks))
+          PY
+          for file in /tmp/mo-js-check/*.js; do
+            echo "Checking $file"
+            node --check "$file"
+          done
