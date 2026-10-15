@@ -148,6 +148,8 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
       <label style="display:block;font-size:13px;font-weight:700;color:#4b5563;margin-top:12px">Password</label>
       <input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimum 6 characters" style="width:100%;margin-top:6px">
       <button id="authBtn" class="btn" type="button" style="width:100%;margin-top:16px">LOGIN</button>
+      <button id="forgotBtn" class="secondary" type="button" style="width:100%;margin-top:8px">Forgot password?</button>
+      <div id="recoveryBox" class="hide" style="margin-top:12px"><label style="font-size:13px;font-weight:700;color:#4b5563">New password</label><input id="newPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters" style="width:100%;margin-top:6px"><button id="savePasswordBtn" class="btn" type="button" style="width:100%;margin-top:8px">Update password</button></div>
       <button id="authToggle" class="secondary" type="button" style="width:100%;margin-top:10px">Create new account</button>
       <div id="authMsg" class="meta" style="margin-top:12px;text-align:center"></div>
     </div>
@@ -163,6 +165,8 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
   <div class="meta">Logged in: <b id="userEmail"></b></div>
   <button id="logoutBtn" class="secondary" type="button">Logout</button>
 </div>
+<section id="licenseCard" class="card" style="margin:0 0 16px;border:1px solid #ddd6fe!important;background:linear-gradient(135deg,#fff,#f5f3ff)!important"><h3 style="margin:0 0 8px">🔐 License activation</h3><div id="licenseStatus" class="meta">Checking license status…</div><div id="licenseActivateRow" class="row" style="margin-top:12px"><input id="licenseKey" type="text" placeholder="MO-XXXXXX-XXXXXX-XXXXXX" style="flex:1;min-width:220px;text-transform:uppercase"><button id="redeemBtn" class="btn" type="button">Activate / Redeem</button></div><div id="licenseMsg" class="meta" style="margin-top:8px"></div></section>
+<section id="adminCard" class="card hide" style="margin:0 0 16px"><h3 style="margin:0 0 10px">Admin · License management</h3><div class="row"><label>Validity <select id="keyDuration"><option value="1">1 month</option><option value="3">3 months</option><option value="6">6 months</option><option value="12">12 months</option></select></label><label>Quantity <input id="keyQuantity" type="number" min="1" max="100" value="1" style="width:90px"></label><button id="generateKeysBtn" class="btn" type="button">Generate keys</button></div><div id="generatedKeys" style="margin-top:10px"></div><hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0"><div class="row"><input id="revokeUserId" placeholder="User UUID to revoke license" style="flex:1;min-width:220px"><button id="revokeUserBtn" class="danger" type="button">Revoke user license</button></div><div class="row" style="margin-top:10px"><input id="revokeKey" placeholder="Unused license key to revoke" style="flex:1;min-width:220px"><button id="revokeKeyBtn" class="secondary" type="button">Revoke unused key</button></div><div id="adminMsg" class="meta" style="margin-top:8px"></div></section>
 <div id="historyStats" class="stats" style="margin-top:0"></div>
 <h2 style="margin-top:4px">Rajasthan Medical Officer PYQ Mock</h2>
 <p>Practice Rajasthan Medical Officer previous-year questions. Choose any number of questions.</p>
@@ -194,6 +198,7 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
       <option>2015</option><option>2016</option><option>2017</option><option>2018</option>
       <option>2019</option><option>2020</option><option>2022</option><option>2024</option>
     </select>
+    <label style="display:block;font-size:13px;font-weight:700;color:#4b5563;margin-top:14px">Question status filter</label><select id="statusFilter" style="width:100%;margin-top:6px"><option value="unattempted">Unattempted only</option><option value="all">All questions (including attempted)</option><option value="attempted">Attempted only</option><option value="incorrect">Incorrect only (latest attempt)</option><option value="correct">Correct only (latest attempt)</option></select>
     <div style="margin-top:15px;padding:12px;border-radius:12px;background:#f5f3ff;color:#5b21b6;font-size:13px">
       ⏱️ <b>Automatic timing:</b> 1 minute per question
     </div>
@@ -232,7 +237,7 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_U4ObHHggF40KVkkOCISA7A__4sBRD6p
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 let qs=[], index=0, answers={}, marked={}, secondsLeft=0, timerId=null, submitted=false, retryMode=false;
-let currentUser=null, attemptedIds=new Set(), attemptHistory=new Map(), authMode="login", loading=false;
+let currentUser=null, attemptedIds=new Set(), attemptHistory=new Map(), authMode="login", loading=false, licenseActive=false, isAppAdmin=false;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -280,6 +285,34 @@ async function handleAuth(){
   }
 }
 
+async function refreshLicenseStatus(){
+  if(!currentUser)return;
+  $("licenseStatus").textContent="Checking license status…";
+  const status=await supabaseClient.rpc("get_my_license_status");
+  const admin=await supabaseClient.rpc("is_app_admin");
+  isAppAdmin=admin.data===true;
+  if(status.error){licenseActive=false;$("licenseStatus").textContent="Could not verify license: "+status.error.message;}
+  else{
+    const v=Array.isArray(status.data)?status.data[0]:status.data;
+    licenseActive=!!(v&&v.is_active===true);
+    $("licenseStatus").textContent=licenseActive?"Active license · Expires: "+new Date(v.expires_at).toLocaleDateString()+" · "+v.days_remaining+" day(s) remaining":(isAppAdmin?"Admin access is enabled.":"No active license. Redeem a valid key to unlock question practice.");
+  }
+  $("licenseActivateRow").classList.toggle("hide",licenseActive||isAppAdmin);
+  $("adminCard").classList.toggle("hide",!isAppAdmin);
+  $("startBtn").disabled=!(licenseActive||isAppAdmin);
+  $("startBtn").style.opacity=(licenseActive||isAppAdmin)?"1":".5";
+}
+async function redeemLicense(){
+  const key=$("licenseKey").value.trim().toUpperCase();
+  if(!key){$("licenseMsg").textContent="Enter your license key.";return;}
+  $("redeemBtn").disabled=true;$("licenseMsg").textContent="Activating…";
+  const {data,error}=await supabaseClient.rpc("redeem_license_key",{p_key:key});
+  $("redeemBtn").disabled=false;
+  if(error){$("licenseMsg").textContent=error.message;return;}
+  const row=Array.isArray(data)?data[0]:data;
+  $("licenseMsg").textContent=row&&row.expires_at?"License activated. Expires "+new Date(row.expires_at).toLocaleDateString()+".":"License activation completed.";
+  $("licenseKey").value="";await refreshLicenseStatus();
+}
 async function loadUserData(){
   const {data,error}=await supabaseClient.auth.getUser();
   if(error || !data.user){
@@ -293,6 +326,7 @@ async function loadUserData(){
   $("setup").classList.remove("hide");
   $("userEmail").textContent=currentUser.email||"User";
   await refreshAttemptHistory();
+  await refreshLicenseStatus();
 }
 
 async function refreshAttemptHistory(){
@@ -343,18 +377,25 @@ async function fetchPool(year){
 
 async function startTest(){
   if(!currentUser) return;
+  if(!licenseActive&&!isAppAdmin){alert("Please activate a valid license before starting a test.");return;}
   const year=$("year").value;
   let n=Math.max(1,Math.min(800,Math.floor(Number($("qcount").value)||50)));
   $("startBtn").disabled=true; $("startBtn").textContent="LOADING QUESTIONS…";
   try{
     const pool=await fetchPool(year);
-    const freshPool=pool.filter(q=>!attemptedIds.has(q.id));
-    if(!freshPool.length){
-      alert("All questions in this selected pool have already been attempted.");
-      return;
-    }
-    n=Math.min(n,freshPool.length);
-    qs=freshPool.slice().sort(()=>Math.random()-0.5).slice(0,n);
+    const mode=$("statusFilter").value;
+    const eligible=pool.filter(q=>{
+      const h=attemptHistory.get(q.id);
+      if(mode==="all")return true;
+      if(mode==="unattempted")return !attemptedIds.has(q.id);
+      if(mode==="attempted")return attemptedIds.has(q.id);
+      if(mode==="incorrect")return !!h&&h.is_correct===false;
+      if(mode==="correct")return !!h&&h.is_correct===true;
+      return !attemptedIds.has(q.id);
+    });
+    if(!eligible.length){alert("No questions match this filter in the selected pool.");return;}
+    n=Math.min(n,eligible.length);
+    qs=eligible.slice().sort(()=>Math.random()-0.5).slice(0,n);
     index=0; answers={}; marked={}; submitted=false; retryMode=false;
     secondsLeft=qs.length*60;
     $("setup").classList.add("hide"); $("result").classList.add("hide");
@@ -466,6 +507,36 @@ function submitTest(auto){submitNow();}
 
 $("authBtn").addEventListener("click",handleAuth);
 $("authToggle").addEventListener("click",()=>setAuthMode(authMode==="login"?"signup":"login"));
+$("forgotBtn").addEventListener("click",async()=>{
+ const email=$("authEmail").value.trim();if(!email){showAuthMessage("Enter your email first.");return;}
+ $("forgotBtn").disabled=true;const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});$("forgotBtn").disabled=false;
+ showAuthMessage(error?error.message:"Password reset requested. Check your inbox and spam folder.",!!error);
+});
+$("savePasswordBtn").addEventListener("click",async()=>{
+ const password=$("newPassword").value;if(password.length<6){showAuthMessage("Password must be at least 6 characters.");return;}
+ const {error}=await supabaseClient.auth.updateUser({password});if(error){showAuthMessage(error.message);return;}
+ $("recoveryBox").classList.add("hide");$("newPassword").value="";showAuthMessage("Password updated successfully.",false);
+});
+supabaseClient.auth.onAuthStateChange(event=>{if(event==="PASSWORD_RECOVERY"){$("recoveryBox").classList.remove("hide");showAuthMessage("Enter your new password below.",false);}});
+$("redeemBtn").addEventListener("click",redeemLicense);
+$("generateKeysBtn").addEventListener("click",async()=>{
+ const duration=Number($("keyDuration").value),quantity=Math.max(1,Math.min(100,Number($("keyQuantity").value)||1));
+ $("generateKeysBtn").disabled=true;$("adminMsg").textContent="Generating keys…";
+ const {data,error}=await supabaseClient.rpc("admin_generate_license_keys",{p_duration_months:duration,p_quantity:quantity});
+ $("generateKeysBtn").disabled=false;if(error){$("adminMsg").textContent=error.message;return;}
+ const rows=Array.isArray(data)?data:[],keys=rows.map(x=>x.generated_key).filter(Boolean);
+ $("generatedKeys").innerHTML=keys.length?'<textarea id="keysOutput" rows="6" style="width:100%;margin-top:8px"></textarea><button id="copyKeysBtn" class="secondary" type="button" style="margin-top:8px">Copy keys</button>':"No keys returned.";
+ if(keys.length){$("keysOutput").value=keys.join("\n");$("copyKeysBtn").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(keys.join("\n"));$("adminMsg").textContent="Keys copied. Save securely; plaintext is shown only once.";}catch(e){$("adminMsg").textContent="Select and copy the keys above. Save securely; shown only once.";} });}
+ $("adminMsg").textContent=keys.length?"Generated "+keys.length+" key(s). Save them now; plaintext keys are shown only once.":"";
+});
+$("revokeUserBtn").addEventListener("click",async()=>{
+ const userId=$("revokeUserId").value.trim();if(!userId){$("adminMsg").textContent="Enter the user's UUID.";return;}if(!confirm("Revoke this user's current license?"))return;
+ const {data,error}=await supabaseClient.rpc("admin_revoke_user_license",{p_user_id:userId});$("adminMsg").textContent=error?error.message:(data?"User license revoked.":"No active license was revoked.");
+});
+$("revokeKeyBtn").addEventListener("click",async()=>{
+ const key=$("revokeKey").value.trim().toUpperCase();if(!key){$("adminMsg").textContent="Enter an unused license key.";return;}if(!confirm("Revoke this unused key?"))return;
+ const {data,error}=await supabaseClient.rpc("admin_revoke_license_key",{p_key:key});$("adminMsg").textContent=error?error.message:(data?"Unused key revoked.":"Key not found, already used, or already revoked.");
+});
 $("authPassword").addEventListener("keydown",e=>{if(e.key==="Enter")handleAuth();});
 $("logoutBtn").addEventListener("click",async()=>{
   clearInterval(timerId);
