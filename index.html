@@ -364,15 +364,23 @@ async function loadUserData(){
 
 async function refreshAttemptHistory(){
   if(!currentUser) return;
-  const {data,error}=await supabaseClient
-    .from("question_attempts")
-    .select("question_id,selected_option,is_correct,attempted_at")
-    .eq("user_id",currentUser.id)
-    .order("attempted_at",{ascending:true});
-  if(error){ console.error(error); return; }
+  const rows=[];
+  const pageSize=1000;
+  for(let offset=0;;offset+=pageSize){
+    const {data,error}=await supabaseClient
+      .from("question_attempts")
+      .select("question_id,selected_option,is_correct,attempted_at")
+      .eq("user_id",currentUser.id)
+      .order("attempted_at",{ascending:true})
+      .order("question_id",{ascending:true})
+      .range(offset,offset+pageSize-1);
+    if(error){console.error(error);return;}
+    rows.push(...(data||[]));
+    if(!data||data.length<pageSize)break;
+  }
   attemptedIds=new Set();
   attemptHistory=new Map();
-  (data||[]).forEach(row=>{
+  rows.forEach(row=>{
     attemptedIds.add(row.question_id);
     attemptHistory.set(row.question_id,row);
   });
