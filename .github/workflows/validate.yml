@@ -1,0 +1,62 @@
+name: Validate app JavaScript
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [license-ui-work]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Extract inline JavaScript and check syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.inline = []
+                  self.active = False
+                  self.external = False
+                  self.parts = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() == "script":
+                      self.active = True
+                      self.external = any(k.lower() == "src" for k, _ in attrs)
+                      self.parts = []
+
+              def handle_data(self, data):
+                  if self.active and not self.external:
+                      self.parts.append(data)
+
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script" and self.active:
+                      if not self.external:
+                          self.inline.append("".join(self.parts))
+                      self.active = False
+                      self.external = False
+                      self.parts = []
+
+          parser = Scripts()
+          parser.feed(Path("index.html").read_text(encoding="utf-8"))
+          scripts = [s for s in parser.inline if s.strip()]
+          if not scripts:
+              raise SystemExit("No inline scripts found in index.html")
+          out = Path("/tmp/mo-js-check")
+          out.mkdir(exist_ok=True)
+          for i, script in enumerate(scripts, 1):
+              (out / f"script-{i}.js").write_text(script, encoding="utf-8")
+          print(f"Extracted {len(scripts)} inline scripts.")
+          PY
+          for file in /tmp/mo-js-check/*.js; do
+            echo "Checking $file"
+            node --check "$file"
+          done
