@@ -287,20 +287,35 @@ async function handleAuth(){
 
 async function refreshLicenseStatus(){
   if(!currentUser)return;
+  const start=$("startBtn");
+  start.disabled=true;
+  start.style.opacity=".5";
   $("licenseStatus").textContent="Checking license status…";
-  const status=await supabaseClient.rpc("get_my_license_status");
-  const admin=await supabaseClient.rpc("is_app_admin");
-  isAppAdmin=admin.data===true;
-  if(status.error){licenseActive=false;$("licenseStatus").textContent="Could not verify license: "+status.error.message;}
-  else{
-    const v=Array.isArray(status.data)?status.data[0]:status.data;
-    licenseActive=!!(v&&v.is_active===true);
-    $("licenseStatus").textContent=licenseActive?"Active license · Expires: "+new Date(v.expires_at).toLocaleDateString()+" · "+v.days_remaining+" day(s) remaining":(isAppAdmin?"Admin access is enabled.":"No active license. Redeem a valid key to unlock question practice.");
+  licenseActive=false;
+  isAppAdmin=false;
+  try{
+    const [status,admin]=await Promise.all([
+      supabaseClient.rpc("get_my_license_status"),
+      supabaseClient.rpc("is_app_admin")
+    ]);
+    isAppAdmin=!admin.error&&admin.data===true;
+    if(status.error){
+      $("licenseStatus").textContent="Could not verify license. Check your connection and try again.";
+    }else{
+      const v=Array.isArray(status.data)?status.data[0]:status.data;
+      licenseActive=!!(v&&v.is_active===true&&v.expires_at&&new Date(v.expires_at).getTime()>Date.now());
+      $("licenseStatus").textContent=licenseActive
+        ?"Active license · Expires: "+new Date(v.expires_at).toLocaleDateString()+" · "+v.days_remaining+" day(s) remaining"
+        :(isAppAdmin?"Admin access is enabled.":"No active license. Redeem a valid key to unlock question practice.");
+    }
+  }catch(e){
+    $("licenseStatus").textContent="Could not verify license because of a connection error. Please retry.";
+  }finally{
+    $("licenseActivateRow").classList.toggle("hide",licenseActive||isAppAdmin);
+    $("adminCard").classList.toggle("hide",!isAppAdmin);
+    start.disabled=!(licenseActive||isAppAdmin);
+    start.style.opacity=(licenseActive||isAppAdmin)?"1":".5";
   }
-  $("licenseActivateRow").classList.toggle("hide",licenseActive||isAppAdmin);
-  $("adminCard").classList.toggle("hide",!isAppAdmin);
-  $("startBtn").disabled=!(licenseActive||isAppAdmin);
-  $("startBtn").style.opacity=(licenseActive||isAppAdmin)?"1":".5";
 }
 async function redeemLicense(){
   const key=$("licenseKey").value.trim().toUpperCase();
