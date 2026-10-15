@@ -602,8 +602,8 @@ function showReviewCategory(category){
     const q=item.q,selected=item.selected;
     const cls=selected===undefined?"unanswered":(selected===q.answer?"good":"bad");
     const response=selected===undefined?"Not answered":selected;
-    const exp=q.explanation?'<div style="margin-top:10px;color:#344054;line-height:1.55"><b>Explanation:</b><br>'+esc(q.explanation).replace(/\\n/g,"<br>")+'</div>':"";
-    const possible=q.possibleQuestions?'<div style="margin-top:12px;padding:11px 12px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;color:#4c1d95;line-height:1.55"><b>Other possible questions from this topic:</b><br>'+esc(q.possibleQuestions).replace(/\\n/g,"<br>")+'</div>':"";
+    const exp=q.explanation?'<div style="margin-top:10px;color:#344054;line-height:1.55"><b>Explanation:</b><br>'+esc(q.explanation).replace(/\n/g,"<br>")+'</div>':"";
+    const possible=q.possibleQuestions?'<div style="margin-top:12px;padding:11px 12px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;color:#4c1d95;line-height:1.55"><b>Other possible questions from this topic:</b><br>'+esc(q.possibleQuestions).replace(/\n/g,"<br>")+'</div>':"";
     const sources=q.sourceNotes?'<div style="margin-top:8px;color:#667085;font-size:12px"><b>Verification/source note:</b> '+esc(q.sourceNotes)+'</div>':"";
     const status=q.verificationStatus==="verified"?'Verified':(q.verificationStatus==="needs_review"?'Needs review':'Verification pending');
     const statusColor=q.verificationStatus==="verified"?'#15803d':(q.verificationStatus==="needs_review"?'#b45309':'#6b7280');
