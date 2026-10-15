@@ -189,8 +189,7 @@ main{max-width:1080px!important;margin:30px auto!important;padding:0 20px 60px!i
 #auth{max-width:560px;margin:5vh auto 24px!important;padding:clamp(25px,5vw,44px)!important;position:relative;overflow:hidden}
 #auth:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,var(--primary),#45a6a0,var(--accent))}
 #auth>div>div:first-child{display:flex!important;align-items:center;justify-content:center;gap:12px;font-size:0!important;letter-spacing:0!important;margin:4px 0 10px}
-#auth>div>div:first-child:before{content:"A";display:grid;place-items:center;width:56px;height:56px;border-radius:18px;background:linear-gradient(145deg,#f0d7a6,#c9994d);color:#163b40;font-size:30px;font-weight:950;box-shadow:0 8px 20px rgba(201,153,77,.22)}
-#auth>div>div:first-child:after{content:"Dr Anmol";font-size:28px;font-weight:900;letter-spacing:-1px;color:#17343b}
+#auth>div>div:first-child:before,#auth>div>div:first-child:after{content:none!important;display:none!important}
 #auth h2{font-size:25px;letter-spacing:-.6px;margin-top:16px!important}
 #auth .meta{line-height:1.65}
 #auth label{color:#40575f!important;font-weight:750!important}
@@ -319,6 +318,14 @@ hr{border-color:#e4ebea!important}
 @keyframes loginMarkFloat{0%,100%{transform:translateY(0);box-shadow:0 10px 28px rgba(8,35,49,.18),inset 0 1px rgba(255,255,255,.12)}50%{transform:translateY(-3px);box-shadow:0 15px 32px rgba(8,35,49,.22),inset 0 1px rgba(255,255,255,.12)}}
 @media(prefers-reduced-motion:reduce){#auth #loginHero .login-brand-mark{animation:none}}
 </style>
+<style id="cortex-login-cleanup">
+#auth>div>div:first-child{display:block!important;font-size:initial!important;letter-spacing:normal!important;margin:0 auto!important}
+#auth #loginHero .login-quote{margin-top:22px!important}
+#auth #loginHero .login-inspiration{margin:0 0 8px!important;font-size:clamp(20px,4vw,26px)!important;line-height:1.25!important;letter-spacing:-.6px!important;color:#173b42!important}
+#auth #loginHero .login-inspiration-sub{max-width:420px;margin:0 auto 18px!important;color:#64757b!important;font-size:13px!important;line-height:1.7!important}
+#auth #loginHero .auth-mode-title{margin:0 0 5px!important;font-size:18px!important;color:#087e80!important;font-weight:850!important;letter-spacing:.02em}
+#auth #loginHero .auth-mode-sub{margin:0!important;font-size:12px!important;line-height:1.6!important;color:#75858a!important}
+</style>
 </head>
 <body>
 
@@ -405,8 +412,10 @@ hr{border-color:#e4ebea!important}
     <div class="login-brand-tag">WHERE KNOWLEDGE EVOLVES</div>
     <div class="login-quote">
       <span class="login-quote-kicker">YOUR NEXT BREAKTHROUGH STARTS HERE</span>
-      <h2 id="authTitle">Think Deeper. Learn Smarter. Go Further.</h2>
-      <p id="authSub" class="meta">Every question builds clarity. Every revision builds confidence. Keep moving toward the doctor you aspire to be.</p>
+      <h2 class="login-inspiration">Think Deeper. Learn Smarter. Go Further.</h2>
+      <p class="login-inspiration-sub">Every question sharpens your mind. Every revision moves you closer to mastery.</p>
+      <h3 id="authTitle" class="auth-mode-title">Log In</h3>
+      <p id="authSub" class="auth-mode-sub" aria-live="polite">Your next breakthrough starts here.</p>
     </div>
     <div style="text-align:left;margin-top:20px">
       <label style="font-size:13px;font-weight:700;color:#4b5563">Email</label>
@@ -532,8 +541,8 @@ function showAuthMessage(msg, isError=true){
 function setAuthMode(mode){
   authMode=mode;
   const signup=mode==="signup";
-  $("authTitle").textContent=signup?"Create account":"Login";
-  $("authSub").textContent=signup?"Create your account to save your own PYQ history securely.":"Login to keep your PYQ attempt history separate and secure.";
+  $("authTitle").textContent=signup?"Sign Up":"Log In";
+  $("authSub").textContent=signup?"Begin your CORTEX learning journey.":"Welcome back to your learning journey.";
   $("authBtn").textContent=signup?"CREATE ACCOUNT":"LOGIN";
   $("authToggle").textContent=signup?"Already have an account? Login":"Create new account";
   $("authPassword").autocomplete=signup?"new-password":"current-password";
@@ -633,7 +642,7 @@ async function loadUserData(){
   currentUser=data.user;
   if(recoveryMode){
     $("auth").classList.remove("hide");$("setup").classList.add("hide");
-    $("authTitle").textContent="Reset password";$("authSub").textContent="Choose a new password for your account.";
+    $("authTitle").textContent="Reset Password";$("authSub").textContent="Choose a new password to continue.";
     $("authEmail").classList.add("hide");$("authPassword").classList.add("hide");$("authBtn").classList.add("hide");$("forgotBtn").classList.add("hide");$("authToggle").classList.add("hide");
     $("recoveryBox").classList.remove("hide");return;
   }
@@ -911,7 +920,7 @@ $("savePasswordBtn").addEventListener("click",async()=>{
  }catch(e){showAuthMessage(e.message||"Could not update password. Check your connection.");}
  finally{button.disabled=false;}
 });
-supabaseClient.auth.onAuthStateChange(event=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;$("auth").classList.remove("hide");$("setup").classList.add("hide");$("authTitle").textContent="Reset password";$("authSub").textContent="Choose a new password for your account.";$("authEmail").classList.add("hide");$("authPassword").classList.add("hide");$("authBtn").classList.add("hide");$("forgotBtn").classList.add("hide");$("authToggle").classList.add("hide");$("recoveryBox").classList.remove("hide");showAuthMessage("Enter your new password below.",false);}});
+supabaseClient.auth.onAuthStateChange(event=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;$("auth").classList.remove("hide");$("setup").classList.add("hide");$("authTitle").textContent="Reset Password";$("authSub").textContent="Choose a new password to continue.";$("authEmail").classList.add("hide");$("authPassword").classList.add("hide");$("authBtn").classList.add("hide");$("forgotBtn").classList.add("hide");$("authToggle").classList.add("hide");$("recoveryBox").classList.remove("hide");showAuthMessage("Enter your new password below.",false);}});
 $("redeemBtn").addEventListener("click",redeemLicense);
 $("generateKeysBtn").addEventListener("click",async()=>{
  const duration=Number($("keyDuration").value),quantity=Math.max(1,Math.min(100,Number($("keyQuantity").value)||1));
@@ -994,6 +1003,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 }
 </script>
-<footer style="text-align:center;padding:24px 16px 30px;color:#667085;font-size:12px;font-weight:600">Designed by <strong style="color:#344054">Dr Anmol</strong></footer>
+
 </body>
 </html>
