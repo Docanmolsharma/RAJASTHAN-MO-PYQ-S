@@ -304,6 +304,21 @@ hr{border-color:#e4ebea!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 </style>
 
+<style id="cortex-login-hero">
+/* CORTEX motivational login hero */
+#auth #loginHero{max-width:520px!important;margin:0 auto 22px!important;padding:2px 0 0}
+#auth #loginHero:before,#auth #loginHero:after{content:none!important;display:none!important}
+#auth #loginHero .login-brand-mark{width:82px;height:82px;margin:0 auto 9px;display:grid;place-items:center;border-radius:26px;background:linear-gradient(145deg,#102b40,#071827);border:1px solid rgba(216,173,104,.48);box-shadow:0 10px 28px rgba(8,35,49,.18),inset 0 1px rgba(255,255,255,.12);animation:loginMarkFloat 3.2s ease-in-out infinite}
+#auth #loginHero .login-brand-mark svg{width:68px;height:68px;filter:drop-shadow(0 0 7px rgba(72,184,210,.18))}
+#auth #loginHero .login-brand-name{font-size:30px;font-weight:950;letter-spacing:.25em;padding-left:.25em;color:#173b42;line-height:1.2}
+#auth #loginHero .login-brand-tag{margin-top:7px;font-size:9px;font-weight:850;letter-spacing:.22em;color:#b18445}
+#auth #loginHero .login-quote{margin-top:24px;padding:19px 15px 17px;border-top:1px solid #e6ece9;border-bottom:1px solid #e6ece9;background:linear-gradient(110deg,rgba(8,126,128,.045),rgba(216,173,104,.07),rgba(8,126,128,.035));border-radius:16px}
+#auth #loginHero .login-quote-kicker{display:block;margin-bottom:9px;font-size:9px;font-weight:900;letter-spacing:.16em;color:#087e80}
+#auth #authTitle{margin:0 0 9px!important;font-size:clamp(21px,4vw,27px)!important;line-height:1.25!important;letter-spacing:-.65px;color:#173b42}
+#auth #authSub{max-width:430px;margin:0 auto!important;font-size:13px;line-height:1.75;color:#64757b!important}
+@keyframes loginMarkFloat{0%,100%{transform:translateY(0);box-shadow:0 10px 28px rgba(8,35,49,.18),inset 0 1px rgba(255,255,255,.12)}50%{transform:translateY(-3px);box-shadow:0 15px 32px rgba(8,35,49,.22),inset 0 1px rgba(255,255,255,.12)}}
+@media(prefers-reduced-motion:reduce){#auth #loginHero .login-brand-mark{animation:none}}
+</style>
 </head>
 <body>
 
@@ -376,11 +391,23 @@ hr{border-color:#e4ebea!important}
 
 <main>
 <section id="auth" class="card">
-  <div style="text-align:center;max-width:520px;margin:auto">
-    <div style="font-size:34px;font-weight:950;letter-spacing:3px;color:#10263f">CORTEX</div>
-    <div style="display:inline-block;margin:8px 0 18px;padding:6px 10px;border-radius:999px;background:#e9eff6;color:#10263f;font-size:11px;font-weight:800;letter-spacing:.4px">MEDICAL LEARNING PLATFORM</div>
-    <h2 id="authTitle" style="margin:4px 0 8px">Login</h2>
-    <p id="authSub" class="meta">Login to keep your PYQ attempt history separate and secure.</p>
+  <div id="loginHero" style="text-align:center;max-width:520px;margin:auto">
+    <div class="login-brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 100 100" role="img" aria-label="CORTEX neural C logo">
+        <defs><linearGradient id="loginGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0c7"/><stop offset=".5" stop-color="#e2b45f"/><stop offset="1" stop-color="#b77b32"/></linearGradient></defs>
+        <path d="M69 18a34 34 0 1 0 0 64" fill="none" stroke="url(#loginGold)" stroke-width="8" stroke-linecap="round"/>
+        <path d="M31 27l15-8 12 12-8 13 12 9-10 14-15-4-7-14 8-10z" fill="none" stroke="#48b8d2" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M31 27l11 17 8-13m0 26-10 6m10-19 12-1" fill="none" stroke="#48b8d2" stroke-width="1.6"/>
+        <g fill="#fff0c7"><circle cx="31" cy="27" r="3"/><circle cx="46" cy="19" r="3"/><circle cx="58" cy="31" r="3"/><circle cx="50" cy="44" r="3"/><circle cx="62" cy="53" r="3"/><circle cx="52" cy="67" r="3"/><circle cx="37" cy="63" r="3"/></g>
+      </svg>
+    </div>
+    <div class="login-brand-name">CORTEX</div>
+    <div class="login-brand-tag">WHERE KNOWLEDGE EVOLVES</div>
+    <div class="login-quote">
+      <span class="login-quote-kicker">YOUR NEXT BREAKTHROUGH STARTS HERE</span>
+      <h2 id="authTitle">Think Deeper. Learn Smarter. Go Further.</h2>
+      <p id="authSub" class="meta">Every question builds clarity. Every revision builds confidence. Keep moving toward the doctor you aspire to be.</p>
+    </div>
     <div style="text-align:left;margin-top:20px">
       <label style="font-size:13px;font-weight:700;color:#4b5563">Email</label>
       <input id="authEmail" type="email" autocomplete="email" placeholder="Enter your email" style="width:100%;margin-top:6px">
