@@ -507,27 +507,27 @@ async function choose(value){
   answers[q.id]=value;
   render();
 
-  const isCorrect=value===q.answer;
   const row={
     user_id:currentUser.id,
     question_id:q.id,
     selected_option:["A","B","C","D"].indexOf(value)+1,
-    is_correct:isCorrect
+    is_correct:value===q.answer
   };
-  const {error}=await supabaseClient.from("question_attempts").insert(row);
-  if(error){
-    console.error(error);
-    alert("Your answer could not be saved. Please check your internet connection.");
-    delete answers[q.id];
-    render();
-    return;
+  try{
+    const {error}=await supabaseClient.from("question_attempts").insert(row);
+    if(error) throw error;
+    attemptedIds.add(q.id);
+    attemptHistory.set(q.id,{
+      question_id:q.id,selected_option:row.selected_option,
+      is_correct:row.is_correct,attempted_at:new Date().toISOString()
+    });
+    renderHistoryStats();
+  }catch(e){
+    // A network failure can happen after the server committed the insert.
+    // Keep the selected answer rather than risking a duplicate attempt on retry.
+    console.error(e);
+    alert("Your answer is selected, but saving could not be confirmed. Check your connection and reload history before starting another test.");
   }
-  attemptedIds.add(q.id);
-  attemptHistory.set(q.id,{
-    question_id:q.id,selected_option:row.selected_option,
-    is_correct:isCorrect,attempted_at:new Date().toISOString()
-  });
-  renderHistoryStats();
 }
 
 async function submitNow(){
@@ -566,25 +566,38 @@ $("authBtn").addEventListener("click",handleAuth);
 $("authToggle").addEventListener("click",()=>setAuthMode(authMode==="login"?"signup":"login"));
 $("forgotBtn").addEventListener("click",async()=>{
  const email=$("authEmail").value.trim();if(!email){showAuthMessage("Enter your email first.");return;}
- $("forgotBtn").disabled=true;const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});$("forgotBtn").disabled=false;
- showAuthMessage(error?error.message:"Password reset requested. Check your inbox and spam folder.",!!error);
+ $("forgotBtn").disabled=true;
+ try{
+  const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  if(error) throw error;
+  showAuthMessage("Password reset requested. Check your inbox and spam folder.",false);
+ }catch(e){showAuthMessage(e.message||"Could not request a password reset. Check your connection.");}
+ finally{$("forgotBtn").disabled=false;}
 });
 $("savePasswordBtn").addEventListener("click",async()=>{
  const password=$("newPassword").value;if(password.length<8){showAuthMessage("Password must be at least 8 characters.");return;}
- const {error}=await supabaseClient.auth.updateUser({password});if(error){showAuthMessage(error.message);return;}
- recoveryMode=false;$("recoveryBox").classList.add("hide");$("newPassword").value="";showAuthMessage("Password updated successfully.",false);await loadUserData();
+ const button=$("savePasswordBtn");button.disabled=true;
+ try{
+  const {error}=await supabaseClient.auth.updateUser({password});if(error) throw error;
+  recoveryMode=false;$("recoveryBox").classList.add("hide");$("newPassword").value="";
+  showAuthMessage("Password updated successfully.",false);await loadUserData();
+ }catch(e){showAuthMessage(e.message||"Could not update password. Check your connection.");}
+ finally{button.disabled=false;}
 });
 supabaseClient.auth.onAuthStateChange(event=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;$("auth").classList.remove("hide");$("setup").classList.add("hide");$("authTitle").textContent="Reset password";$("authSub").textContent="Choose a new password for your account.";$("authEmail").classList.add("hide");$("authPassword").classList.add("hide");$("authBtn").classList.add("hide");$("forgotBtn").classList.add("hide");$("authToggle").classList.add("hide");$("recoveryBox").classList.remove("hide");showAuthMessage("Enter your new password below.",false);}});
 $("redeemBtn").addEventListener("click",redeemLicense);
 $("generateKeysBtn").addEventListener("click",async()=>{
  const duration=Number($("keyDuration").value),quantity=Math.max(1,Math.min(100,Number($("keyQuantity").value)||1));
  $("generateKeysBtn").disabled=true;$("adminMsg").textContent="Generating keys…";
- const {data,error}=await supabaseClient.rpc("admin_generate_license_keys",{p_duration_months:duration,p_quantity:quantity});
- $("generateKeysBtn").disabled=false;if(error){$("adminMsg").textContent=error.message;return;}
- const rows=Array.isArray(data)?data:[],keys=rows.map(x=>x.generated_key).filter(Boolean);
- $("generatedKeys").innerHTML=keys.length?'<textarea id="keysOutput" rows="6" style="width:100%;margin-top:8px"></textarea><button id="copyKeysBtn" class="secondary" type="button" style="margin-top:8px">Copy keys</button>':"No keys returned.";
- if(keys.length){$("keysOutput").value=keys.join("\n");$("copyKeysBtn").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(keys.join("\n"));$("adminMsg").textContent="Keys copied. Save securely; plaintext is shown only once.";}catch(e){$("adminMsg").textContent="Select and copy the keys above. Save securely; shown only once.";} });}
- $("adminMsg").textContent=keys.length?"Generated "+keys.length+" key(s). Save them now; plaintext keys are shown only once.":"";
+ try{
+  const {data,error}=await supabaseClient.rpc("admin_generate_license_keys",{p_duration_months:duration,p_quantity:quantity});
+  if(error) throw error;
+  const rows=Array.isArray(data)?data:[],keys=rows.map(x=>x.generated_key).filter(Boolean);
+  $("generatedKeys").innerHTML=keys.length?'<textarea id="keysOutput" rows="6" style="width:100%;margin-top:8px"></textarea><button id="copyKeysBtn" class="secondary" type="button" style="margin-top:8px">Copy keys</button>':"No keys returned.";
+  if(keys.length){$("keysOutput").value=keys.join("\n");$("copyKeysBtn").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(keys.join("\n"));$("adminMsg").textContent="Keys copied. Save securely; plaintext is shown only once.";}catch(e){$("adminMsg").textContent="Select and copy the keys above. Save securely; shown only once.";} });}
+  $("adminMsg").textContent=keys.length?"Generated "+keys.length+" key(s). Save them now; plaintext keys are shown only once.":"No keys returned.";
+ }catch(e){$("adminMsg").textContent=e.message||"Could not generate keys. Check your connection and try again.";}
+ finally{$("generateKeysBtn").disabled=false;}
 });
 $("revokeUserBtn").addEventListener("click",async()=>{
  const userId=$("revokeUserId").value.trim();if(!userId){$("adminMsg").textContent="Enter the user's UUID.";return;}if(!confirm("Revoke this user's current license?"))return;
