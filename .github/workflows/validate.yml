@@ -45,8 +45,9 @@ jobs:
                       self.external = False
                       self.parts = []
 
+          html = Path("index.html").read_text(encoding="utf-8")
           parser = Scripts()
-          parser.feed(Path("index.html").read_text(encoding="utf-8"))
+          parser.feed(html)
           scripts = [s for s in parser.inline if s.strip()]
           if not scripts:
               raise SystemExit("No inline scripts found in index.html")
@@ -55,6 +56,43 @@ jobs:
           for i, script in enumerate(scripts, 1):
               (out / f"script-{i}.js").write_text(script, encoding="utf-8")
           print(f"Extracted {len(scripts)} inline scripts.")
+          PY
+      - name: Check critical HTML structure and accidental secrets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from collections import Counter
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          class IDs(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.values = []
+              def handle_starttag(self, tag, attrs):
+                  self.values.extend(v for k, v in attrs if k.lower() == "id")
+
+          parser = IDs()
+          parser.feed(html)
+          duplicates = [name for name, count in Counter(parser.values).items() if count > 1]
+          if duplicates:
+              raise SystemExit("Duplicate HTML IDs: " + ", ".join(sorted(duplicates)))
+
+          required = {
+              "auth", "authEmail", "authPassword", "forgotBtn", "recoveryBox",
+              "savePasswordBtn", "setup", "licenseStatus", "licenseKey",
+              "redeemBtn", "adminCard", "startBtn", "statusFilter", "review"
+          }
+          missing = sorted(required - set(parser.values))
+          if missing:
+              raise SystemExit("Missing required UI IDs: " + ", ".join(missing))
+
+          if re.search(r"service_role|sb_secret_", html, re.I):
+              raise SystemExit("Potential server-side secret found in client HTML")
+          print(f"HTML structure passed: {len(parser.values)} IDs, no duplicates.")
+          print("Critical auth, license, admin, filter and review controls are present.")
           PY
           for file in /tmp/mo-js-check/*.js; do
             echo "Checking $file"
