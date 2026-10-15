@@ -146,10 +146,10 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
       <label style="font-size:13px;font-weight:700;color:#4b5563">Email</label>
       <input id="authEmail" type="email" autocomplete="email" placeholder="Enter your email" style="width:100%;margin-top:6px">
       <label style="display:block;font-size:13px;font-weight:700;color:#4b5563;margin-top:12px">Password</label>
-      <input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimum 6 characters" style="width:100%;margin-top:6px">
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimum 8 characters" style="width:100%;margin-top:6px">
       <button id="authBtn" class="btn" type="button" style="width:100%;margin-top:16px">LOGIN</button>
       <button id="forgotBtn" class="secondary" type="button" style="width:100%;margin-top:8px">Forgot password?</button>
-      <div id="recoveryBox" class="hide" style="margin-top:12px"><label style="font-size:13px;font-weight:700;color:#4b5563">New password</label><input id="newPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters" style="width:100%;margin-top:6px"><button id="savePasswordBtn" class="btn" type="button" style="width:100%;margin-top:8px">Update password</button></div>
+      <div id="recoveryBox" class="hide" style="margin-top:12px"><label style="font-size:13px;font-weight:700;color:#4b5563">New password</label><input id="newPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters" style="width:100%;margin-top:6px"><button id="savePasswordBtn" class="btn" type="button" style="width:100%;margin-top:8px">Update password</button></div>
       <button id="authToggle" class="secondary" type="button" style="width:100%;margin-top:10px">Create new account</button>
       <div id="authMsg" class="meta" style="margin-top:12px;text-align:center"></div>
     </div>
@@ -262,7 +262,7 @@ async function handleAuth(){
   const email=$("authEmail").value.trim();
   const password=$("authPassword").value;
   if(!email || !password){showAuthMessage("Please enter email and password.");return;}
-  if(password.length<6){showAuthMessage("Password must be at least 6 characters.");return;}
+  if(password.length<8){showAuthMessage("Password must be at least 8 characters.");return;}
   loading=true; $("authBtn").disabled=true; showAuthMessage(authMode==="signup"?"Creating account…":"Signing in…",false);
   try{
     let result;
@@ -522,7 +522,7 @@ $("forgotBtn").addEventListener("click",async()=>{
  showAuthMessage(error?error.message:"Password reset requested. Check your inbox and spam folder.",!!error);
 });
 $("savePasswordBtn").addEventListener("click",async()=>{
- const password=$("newPassword").value;if(password.length<6){showAuthMessage("Password must be at least 6 characters.");return;}
+ const password=$("newPassword").value;if(password.length<8){showAuthMessage("Password must be at least 8 characters.");return;}
  const {error}=await supabaseClient.auth.updateUser({password});if(error){showAuthMessage(error.message);return;}
  recoveryMode=false;$("recoveryBox").classList.add("hide");$("newPassword").value="";showAuthMessage("Password updated successfully.",false);await loadUserData();
 });
