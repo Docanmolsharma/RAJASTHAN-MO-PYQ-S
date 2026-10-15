@@ -237,7 +237,7 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_U4ObHHggF40KVkkOCISA7A__4sBRD6p
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 let qs=[], index=0, answers={}, marked={}, secondsLeft=0, timerId=null, submitted=false, retryMode=false;
-let currentUser=null, attemptedIds=new Set(), attemptHistory=new Map(), authMode="login", loading=false, licenseActive=false, isAppAdmin=false;
+let currentUser=null, attemptedIds=new Set(), attemptHistory=new Map(), authMode="login", loading=false, licenseActive=false, isAppAdmin=false, recoveryMode=false;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -322,6 +322,12 @@ async function loadUserData(){
     return;
   }
   currentUser=data.user;
+  if(recoveryMode){
+    $("auth").classList.remove("hide");$("setup").classList.add("hide");
+    $("authTitle").textContent="Reset password";$("authSub").textContent="Choose a new password for your account.";
+    $("authEmail").classList.add("hide");$("authPassword").classList.add("hide");$("authBtn").classList.add("hide");$("forgotBtn").classList.add("hide");$("authToggle").classList.add("hide");
+    $("recoveryBox").classList.remove("hide");return;
+  }
   $("auth").classList.add("hide");
   $("setup").classList.remove("hide");
   $("userEmail").textContent=currentUser.email||"User";
@@ -515,9 +521,9 @@ $("forgotBtn").addEventListener("click",async()=>{
 $("savePasswordBtn").addEventListener("click",async()=>{
  const password=$("newPassword").value;if(password.length<6){showAuthMessage("Password must be at least 6 characters.");return;}
  const {error}=await supabaseClient.auth.updateUser({password});if(error){showAuthMessage(error.message);return;}
- $("recoveryBox").classList.add("hide");$("newPassword").value="";showAuthMessage("Password updated successfully.",false);
+ recoveryMode=false;$("recoveryBox").classList.add("hide");$("newPassword").value="";showAuthMessage("Password updated successfully.",false);await loadUserData();
 });
-supabaseClient.auth.onAuthStateChange(event=>{if(event==="PASSWORD_RECOVERY"){$("recoveryBox").classList.remove("hide");showAuthMessage("Enter your new password below.",false);}});
+supabaseClient.auth.onAuthStateChange(event=>{if(event==="PASSWORD_RECOVERY"){recoveryMode=true;$("auth").classList.remove("hide");$("setup").classList.add("hide");$("authTitle").textContent="Reset password";$("authSub").textContent="Choose a new password for your account.";$("authEmail").classList.add("hide");$("authPassword").classList.add("hide");$("authBtn").classList.add("hide");$("forgotBtn").classList.add("hide");$("authToggle").classList.add("hide");$("recoveryBox").classList.remove("hide");showAuthMessage("Enter your new password below.",false);}});
 $("redeemBtn").addEventListener("click",redeemLicense);
 $("generateKeysBtn").addEventListener("click",async()=>{
  const duration=Number($("keyDuration").value),quantity=Math.max(1,Math.min(100,Number($("keyQuantity").value)||1));
