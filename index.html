@@ -237,7 +237,7 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_U4ObHHggF40KVkkOCISA7A__4sBRD6p
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 let qs=[], index=0, answers={}, marked={}, secondsLeft=0, timerId=null, submitted=false, retryMode=false;
-let currentUser=null, attemptedIds=new Set(), attemptHistory=new Map(), authMode="login", loading=false, licenseActive=false, isAppAdmin=false, recoveryMode=false;
+let currentUser=null, attemptedIds=new Set(), attemptHistory=new Map(), authMode="login", loading=false, licenseActive=false, isAppAdmin=false, recoveryMode=false, historyReady=false, pendingAttemptSaves=new Set();
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -363,6 +363,7 @@ async function loadUserData(){
 }
 
 async function refreshAttemptHistory(){
+  historyReady=false;
   if(!currentUser) return;
   // Clear in-memory history before loading so one account's data can never
   // remain visible if a later account's history request fails.
@@ -398,6 +399,7 @@ async function refreshAttemptHistory(){
   renderHistoryStats();
   $("historyStats").removeAttribute("role");
   delete $("historyStats").dataset.loadError;
+  historyReady=true;
 }
 function renderHistoryStats(){
   const total=800, attempted=attemptedIds.size;
@@ -431,6 +433,7 @@ async function fetchPool(year){
 
 async function startTest(){
   if(!currentUser) return;
+  if(!historyReady){alert("Attempt history has not loaded. Please reload the app or check your connection before starting.");return;}
   if(!licenseActive&&!isAppAdmin){alert("Please activate a valid license before starting a test.");return;}
   const year=$("year").value;
   let n=Math.max(1,Math.min(800,Math.floor(Number($("qcount").value)||50)));
@@ -513,26 +516,32 @@ async function choose(value){
     selected_option:["A","B","C","D"].indexOf(value)+1,
     is_correct:value===q.answer
   };
-  try{
-    const {error}=await supabaseClient.from("question_attempts").insert(row);
-    if(error) throw error;
-    attemptedIds.add(q.id);
-    attemptHistory.set(q.id,{
-      question_id:q.id,selected_option:row.selected_option,
-      is_correct:row.is_correct,attempted_at:new Date().toISOString()
-    });
-    renderHistoryStats();
-  }catch(e){
-    // A network failure can happen after the server committed the insert.
-    // Keep the selected answer rather than risking a duplicate attempt on retry.
-    console.error(e);
-    alert("Your answer is selected, but saving could not be confirmed. Check your connection and reload history before starting another test.");
-  }
+  const savePromise=(async()=>{
+    try{
+      const {error}=await supabaseClient.from("question_attempts").insert(row);
+      if(error) throw error;
+      attemptedIds.add(q.id);
+      attemptHistory.set(q.id,{
+        question_id:q.id,selected_option:row.selected_option,
+        is_correct:row.is_correct,attempted_at:new Date().toISOString()
+      });
+      renderHistoryStats();
+    }catch(e){
+      // A network failure can happen after the server committed the insert.
+      // Keep the selected answer rather than risking a duplicate attempt on retry.
+      console.error(e);
+      alert("Your answer is selected, but saving could not be confirmed. Check your connection and reload history before starting another test.");
+    }
+  })();
+  pendingAttemptSaves.add(savePromise);
+  try{await savePromise;}finally{pendingAttemptSaves.delete(savePromise);}
 }
 
 async function submitNow(){
   if(submitted || !qs.length) return;
   submitted=true;
+  // Wait for any answer writes already in flight before refreshing history.
+  if(pendingAttemptSaves.size) await Promise.allSettled([...pendingAttemptSaves]);
   if(timerId){clearInterval(timerId);timerId=null;}
   var attempted=Object.keys(answers).length,correct=0,wrong=0;
   for(var k=0;k<qs.length;k++){
