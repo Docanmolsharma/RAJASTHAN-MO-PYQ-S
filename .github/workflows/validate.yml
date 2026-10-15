@@ -91,8 +91,22 @@ jobs:
 
           if re.search(r"service_role|sb_secret_", html, re.I):
               raise SystemExit("Potential server-side secret found in client HTML")
+
+          checks = {
+              "license checks fail closed": 'start.disabled=true;' in html and 'licenseActive=false;' in html,
+              "license expiry is checked": 'new Date(v.expires_at).getTime()>Date.now()' in html,
+              "all history pages are loaded": '.range(offset,offset+pageSize-1)' in html,
+              "question status filters exist": all(f'mode==="{mode}"' in html for mode in ("all","unattempted","attempted","incorrect","correct")),
+              "license redemption recovers from errors": 'Activation failed due to a connection error' in html,
+              "unanswered questions are distinguished": "Not answered" in html and "unanswered" in html,
+          }
+          failed = [label for label, passed in checks.items() if not passed]
+          if failed:
+              raise SystemExit("App behavior regression checks failed: " + ", ".join(failed))
+
           print(f"HTML structure passed: {len(parser.values)} IDs, no duplicates.")
           print("Critical auth, license, admin, filter and review controls are present.")
+          print("Behavior regression checks passed: " + ", ".join(checks))
           PY
           for file in /tmp/mo-js-check/*.js; do
             echo "Checking $file"
