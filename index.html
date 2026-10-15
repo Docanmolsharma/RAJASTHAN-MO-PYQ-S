@@ -127,6 +127,20 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
 <meta name="apple-mobile-web-app-title" content="Rajasthan MO PYQ">
 <link rel="apple-touch-icon" href="icon-180.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* Review summary and consistent answer-status colors */
+.result-categories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.result-filter{padding:13px 8px;border:1px solid transparent;border-radius:13px;font-size:14px}
+.correct-filter{background:#dcfce7;color:#166534;border-color:#86efac}
+.incorrect-filter{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+.unanswered-filter{background:#e5e7eb;color:#374151;border-color:#d1d5db}
+.result-filter.active-filter{outline:3px solid #4f46e5;outline-offset:2px}
+#palette button.correct-status{background:#bbf7d0!important;border-color:#16a34a!important;color:#166534!important}
+#palette button.incorrect-status{background:#fecaca!important;border-color:#dc2626!important;color:#991b1b!important}
+#palette button.unanswered{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}
+#palette button.marked{outline:3px solid rgba(245,158,11,.35)!important}
+@media(max-width:500px){.result-categories{gap:6px}.result-filter{font-size:12px;padding:11px 4px}}
+</style>
 </head>
 <body>
 <header id="topbar" class="hide">
@@ -226,7 +240,13 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
 <h2>Test Result</h2>
 <div id="score" style="font-size:32px;font-weight:900"></div>
 <div id="stats" class="stats"></div>
-<div class="row"><button id="wrongBtn" class="btn" type="button">Retry Wrong / Unattempted</button><button id="newBtn" class="secondary" type="button">New Test</button></div>
+<div class="result-categories" role="group" aria-label="Review questions by result">
+<button id="correctReviewBtn" class="result-filter correct-filter" type="button">Correct: <span id="correctCount">0</span></button>
+<button id="incorrectReviewBtn" class="result-filter incorrect-filter" type="button">Incorrect: <span id="incorrectCount">0</span></button>
+<button id="unattemptedReviewBtn" class="result-filter unanswered-filter" type="button">Unattempted: <span id="unattemptedCount">0</span></button>
+</div>
+<div id="reviewPrompt" class="meta" style="margin:12px 0">Choose a category above to review those questions.</div>
+<div class="row"><button id="wrongBtn" class="btn" type="button">Retry Incorrect / Unattempted</button><button id="newBtn" class="secondary" type="button">New Test</button></div>
 <div id="review"></div>
 </section>
 </main>
@@ -500,7 +520,7 @@ function render(){
   $("markBtn").textContent=marked[q.id]?"Unmark Review":"Mark for Review";
   $("counts").textContent="Attempted "+Object.keys(answers).length+" • Unattempted "+(qs.length-Object.keys(answers).length);
   $("bar").style.width=((index+1)/qs.length*100)+"%";
-  $("palette").innerHTML=qs.map((x,i)=>`<button type="button" class="${answers[x.id]?"attempted ":""}${marked[x.id]?"marked":""}" data-i="${i}">${i+1}</button>`).join("");
+  $("palette").innerHTML=qs.map((x,i)=>{const selected=answers[x.id];const status=selected===undefined?"unanswered":(selected===x.answer?"correct-status":"incorrect-status");return `<button type="button" class="${status}${marked[x.id]?" marked":""}" data-i="${i}" aria-label="Question ${i+1}: ${status.replace("-status","")}">${i+1}</button>`;}).join("");
   document.querySelectorAll("#palette button").forEach(b=>b.addEventListener("click",()=>{index=Number(b.dataset.i);render();}));
 }
 
@@ -540,7 +560,6 @@ async function choose(value){
 async function submitNow(){
   if(submitted || !qs.length) return;
   submitted=true;
-  // Wait for any answer writes already in flight before refreshing history.
   if(pendingAttemptSaves.size) await Promise.allSettled([...pendingAttemptSaves]);
   if(timerId){clearInterval(timerId);timerId=null;}
   var attempted=Object.keys(answers).length,correct=0,wrong=0;
@@ -550,26 +569,40 @@ async function submitNow(){
     else if(answers[q.id]!==undefined) wrong++;
   }
   var unattempted=qs.length-attempted;
-  document.getElementById("exam").style.display="none";
-  document.getElementById("topbar").style.display="none";
-  var result=document.getElementById("result");
+  $("exam").style.display="none";
+  $("topbar").style.display="none";
+  var result=$("result");
   result.classList.remove("hide"); result.style.display="block";
-  document.getElementById("score").textContent=correct+" / "+qs.length;
-  document.getElementById("stats").innerHTML=
-    "<span>Correct: "+correct+"</span><span>Wrong: "+wrong+"</span>"+
-    "<span>Unattempted: "+unattempted+"</span><span>Attempted: "+attempted+"</span>"+
-    "<span>Accuracy: "+(attempted?Math.round(correct/attempted*100):0)+"%</span>";
-  document.getElementById("review").innerHTML=qs.map(function(q,i){
-    var selected=answers[q.id];
-    var ok=selected===q.answer;
-    var cls=selected===undefined?'unanswered':(ok?'good':'bad');
-    var response=selected===undefined?'Not answered':selected;
-    var exp=q.explanation?'<div style="margin-top:7px;color:#475467"><b>Explanation:</b> '+esc(q.explanation)+'</div>':"";
-    return '<div class="review-item '+cls+'"><b>'+(i+1)+'. '+esc(q.question)+'</b><br><small>Your: '+response+' | Correct: '+q.answer+'</small>'+exp+'</div>';
-  }).join("");
+  $("score").textContent=correct+" / "+qs.length;
+  $("stats").innerHTML="<span>Attempted: "+attempted+"</span><span>Accuracy: "+(attempted?Math.round(correct/attempted*100):0)+"%</span>";
+  $("correctCount").textContent=correct;
+  $("incorrectCount").textContent=wrong;
+  $("unattemptedCount").textContent=unattempted;
+  $("review").innerHTML="";
+  $("reviewPrompt").textContent="Choose Correct, Incorrect, or Unattempted to review that category.";
+  $("correctReviewBtn").classList.remove("active-filter");
+  $("incorrectReviewBtn").classList.remove("active-filter");
+  $("unattemptedReviewBtn").classList.remove("active-filter");
   await refreshAttemptHistory();
 }
-function submitTest(auto){submitNow();}
+function showReviewCategory(category){
+  const filtered=qs.map((q,i)=>({q,i,selected:answers[q.id]})).filter(item=>{
+    if(category==="correct") return item.selected===item.q.answer;
+    if(category==="incorrect") return item.selected!==undefined && item.selected!==item.q.answer;
+    return item.selected===undefined;
+  });
+  $("correctReviewBtn").classList.toggle("active-filter",category==="correct");
+  $("incorrectReviewBtn").classList.toggle("active-filter",category==="incorrect");
+  $("unattemptedReviewBtn").classList.toggle("active-filter",category==="unattempted");
+  $("reviewPrompt").textContent=filtered.length+" "+category+" question(s) for review.";
+  $("review").innerHTML=filtered.length?filtered.map(function(item){
+    const q=item.q,selected=item.selected;
+    const cls=selected===undefined?"unanswered":(selected===q.answer?"good":"bad");
+    const response=selected===undefined?"Not answered":selected;
+    const exp=q.explanation?'<div style="margin-top:7px;color:#475467"><b>Explanation:</b> '+esc(q.explanation)+'</div>':"";
+    return '<div class="review-item '+cls+'"><b>'+(item.i+1)+'. '+esc(q.question)+'</b><br><small>Your answer: '+response+' | Correct answer: '+q.answer+'</small>'+exp+'</div>';
+  }).join(""):'<div class="review-item">No '+category+' questions in this test.</div>';
+}function submitTest(auto){submitNow();}
 
 $("authBtn").addEventListener("click",handleAuth);
 $("authToggle").addEventListener("click",()=>setAuthMode(authMode==="login"?"signup":"login"));
@@ -626,6 +659,9 @@ $("startBtn").addEventListener("click",startTest);
 $("prevBtn").addEventListener("click",()=>{if(index>0){index--;render();}});
 $("nextBtn").addEventListener("click",()=>{if(index<qs.length-1){index++;render();}});
 $("markBtn").addEventListener("click",()=>{const id=qs[index].id;marked[id]=!marked[id];render();});
+$("correctReviewBtn").addEventListener("click",()=>showReviewCategory("correct"));
+$("incorrectReviewBtn").addEventListener("click",()=>showReviewCategory("incorrect"));
+$("unattemptedReviewBtn").addEventListener("click",()=>showReviewCategory("unattempted"));
 $("wrongBtn").addEventListener("click",()=>{
   const retryQs=qs.filter(q=>answers[q.id]===undefined || answers[q.id]!==q.answer);
   if(!retryQs.length){alert("Excellent! There are no wrong or unattempted questions.");return;}
