@@ -98,6 +98,8 @@ jobs:
               "all history pages are loaded": '.range(offset,offset+pageSize-1)' in html,
               "history is cleared before loading another account": html.index('attemptedIds=new Set();', html.index('async function refreshAttemptHistory')) < html.index('.from("question_attempts")', html.index('async function refreshAttemptHistory')),
               "history load failures are visible": 'History could not be loaded. Check your connection and reload.' in html,
+              "test start requires loaded history": 'if(!historyReady){alert("Attempt history has not loaded.' in html,
+              "submission waits for pending answer saves": 'await Promise.allSettled([...pendingAttemptSaves])' in html,
               "answer-save network errors are handled": 'Your answer is selected, but saving could not be confirmed.' in html,
               "password reset always restores button": 'finally{$("forgotBtn").disabled=false;}' in html,
               "admin key generation always restores button": 'finally{$("generateKeysBtn").disabled=false;}' in html,
