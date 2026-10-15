@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Rajasthan MO PYQ | Dr Anmol</title>
+<title>CORTEX — Where Knowledge Evolves</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f7fb;color:#111827}
 header{background:#111827;color:white;padding:14px 18px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:5}
@@ -121,11 +121,11 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
 .retry-note{margin:0 0 14px;padding:11px 13px;border-radius:12px;background:#f5f3ff;border:1px solid #ddd6fe;color:#5b21b6;font-size:13px;font-weight:800}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0e252d">
+<meta name="theme-color" content="#10263f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Rajasthan MO PYQ">
-<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="CORTEX">
+<link rel="apple-touch-icon" href="cortex-icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* Review summary and consistent answer-status colors */
@@ -306,8 +306,42 @@ hr{border-color:#e4ebea!important}
 
 </head>
 <body>
+
+<style id="cortex-branding">
+:root{--cortex-navy:#10263f;--cortex-blue:#1d466b;--cortex-gold:#c99a50;--cortex-cream:#f7f2e8}
+#cortexSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;background:radial-gradient(circle at 50% 38%,#234766 0%,#142e49 42%,#0b1c30 100%);color:var(--cortex-cream);transition:opacity .55s ease,visibility .55s ease}
+#cortexSplash.done{opacity:0;visibility:hidden;pointer-events:none}
+.cortex-splash-logo{width:min(42vw,190px);height:min(42vw,190px);filter:drop-shadow(0 12px 24px #0005);animation:cortexFloat 2.4s ease-in-out infinite}
+.cortex-splash-name{margin-top:23px;font-size:clamp(31px,8vw,43px);font-weight:900;letter-spacing:.24em;padding-left:.24em;color:#f8f1e3}
+.cortex-splash-tag{margin-top:9px;font-size:11px;letter-spacing:.18em;color:#e3c38d;text-transform:uppercase}
+.cortex-loader{width:100px;height:2px;margin-top:30px;background:#ffffff25;overflow:hidden;border-radius:9px}
+.cortex-loader:after{content:"";display:block;height:100%;width:45%;background:linear-gradient(90deg,#c99a50,#f6dfad);animation:cortexLoad 1.25s ease-in-out infinite}
+@keyframes cortexFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-7px) scale(1.025)}}
+@keyframes cortexLoad{0%{transform:translateX(-110%)}100%{transform:translateX(240%)}}
+@media(prefers-reduced-motion:reduce){.cortex-splash-logo,.cortex-loader:after{animation:none!important}#cortexSplash{transition:none}}
+</style>
+<div id="cortexSplash" role="status" aria-label="CORTEX is loading">
+ <svg class="cortex-splash-logo" viewBox="0 0 200 200" aria-hidden="true">
+  <defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f9e4b2"/><stop offset=".48" stop-color="#d2a254"/><stop offset="1" stop-color="#9b692c"/></linearGradient></defs>
+  <path d="M145 40a64 64 0 1 0 0 120" fill="none" stroke="url(#cg)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M91 42c-17-14-37 0-34 17-20 2-26 24-12 37-12 17-1 35 15 35 0 19 19 28 34 16 12 12 28 6 31-8" fill="none" stroke="url(#cg)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M60 57l23 12-10 20 20 13-13 22 20 14M83 69l18-14m-8 47 19-15m-25 37-15 5" fill="none" stroke="#f7e3b6" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#fff0c9" stroke="#c99a50" stroke-width="2"><circle cx="60" cy="57" r="5"/><circle cx="83" cy="69" r="5"/><circle cx="73" cy="89" r="5"/><circle cx="93" cy="102" r="5"/><circle cx="80" cy="124" r="5"/><circle cx="100" cy="138" r="5"/><circle cx="101" cy="55" r="5"/></g>
+  <path d="M111 98h19l8-17 9 36 8-19h15" fill="none" stroke="url(#cg)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+ </svg>
+ <div class="cortex-splash-name">CORTEX</div><div class="cortex-splash-tag">Where Knowledge Evolves</div><div class="cortex-loader"></div>
+</div>
+<script>
+(function(){
+ const splash=document.getElementById('cortexSplash'); if(!splash)return;
+ let hidden=false;function hide(){if(hidden)return;hidden=true;splash.classList.add('done');setTimeout(()=>splash.remove(),650)}
+ window.addEventListener('load',()=>setTimeout(hide,1700),{once:true});
+ setTimeout(hide,4500);
+})();
+</script>
+
 <header id="topbar" class="hide">
-  <div class="title">Dr Anmol</div>
+  <div class="title">CORTEX <span style="font-weight:500;color:#e6c48a;font-size:12px">Where Knowledge Evolves</span></div>
   <div id="timer">00:00</div>
   <button id="submitBtn" class="danger" type="button" onclick="submitNow()">Submit Test</button>
 </header>
@@ -315,8 +349,8 @@ hr{border-color:#e4ebea!important}
 <main>
 <section id="auth" class="card">
   <div style="text-align:center;max-width:520px;margin:auto">
-    <div style="font-size:34px;font-weight:900;letter-spacing:-.8px">Dr Anmol</div>
-    <div style="display:inline-block;margin:8px 0 18px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:800;letter-spacing:.4px">RAJASTHAN MO PYQ</div>
+    <div style="font-size:34px;font-weight:950;letter-spacing:3px;color:#10263f">CORTEX</div>
+    <div style="display:inline-block;margin:8px 0 18px;padding:6px 10px;border-radius:999px;background:#e9eff6;color:#10263f;font-size:11px;font-weight:800;letter-spacing:.4px">MEDICAL LEARNING PLATFORM</div>
     <h2 id="authTitle" style="margin:4px 0 8px">Login</h2>
     <p id="authSub" class="meta">Login to keep your PYQ attempt history separate and secure.</p>
     <div style="text-align:left;margin-top:20px">
@@ -335,8 +369,8 @@ hr{border-color:#e4ebea!important}
 
 <section id="setup" class="card hide">
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-  <div style="font-size:30px;font-weight:900;letter-spacing:-.8px">Dr Anmol</div>
-  <div style="padding:6px 10px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:800;letter-spacing:.4px">RAJASTHAN MO PYQ</div>
+  <div style="font-size:30px;font-weight:950;letter-spacing:3px;color:#10263f">CORTEX</div>
+  <div style="padding:6px 10px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:800;letter-spacing:.4px">MEDICAL LEARNING PLATFORM</div>
 </div>
 <div id="accountBar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 16px">
   <div class="meta">Logged in: <b id="userEmail"></b></div>
