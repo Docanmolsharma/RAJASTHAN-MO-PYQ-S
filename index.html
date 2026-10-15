@@ -320,13 +320,25 @@ async function refreshLicenseStatus(){
 async function redeemLicense(){
   const key=$("licenseKey").value.trim().toUpperCase();
   if(!key){$("licenseMsg").textContent="Enter your license key.";return;}
-  $("redeemBtn").disabled=true;$("licenseMsg").textContent="Activating…";
-  const {data,error}=await supabaseClient.rpc("redeem_license_key",{p_key:key});
-  $("redeemBtn").disabled=false;
-  if(error){$("licenseMsg").textContent=error.message;return;}
-  const row=Array.isArray(data)?data[0]:data;
-  $("licenseMsg").textContent=row&&row.expires_at?"License activated. Expires "+new Date(row.expires_at).toLocaleDateString()+".":"License activation completed.";
-  $("licenseKey").value="";await refreshLicenseStatus();
+  const button=$("redeemBtn");
+  button.disabled=true;
+  $("licenseMsg").textContent="Activating…";
+  try{
+    const {data,error}=await supabaseClient.rpc("redeem_license_key",{p_key:key});
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;
+    $("licenseMsg").textContent=row&&row.expires_at
+      ?"License activated. Expires "+new Date(row.expires_at).toLocaleDateString()+"."
+      :"License activation completed.";
+    $("licenseKey").value="";
+    await refreshLicenseStatus();
+  }catch(e){
+    $("licenseMsg").textContent=e&&e.message
+      ?"Activation failed: "+e.message
+      :"Activation failed due to a connection error. Please try again.";
+  }finally{
+    button.disabled=false;
+  }
 }
 async function loadUserData(){
   const {data,error}=await supabaseClient.auth.getUser();
