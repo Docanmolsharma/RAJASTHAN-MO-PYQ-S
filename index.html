@@ -419,6 +419,67 @@ hr{border-color:#e4ebea!important}
 </div>
 <section id="licenseCard" class="card" style="margin:0 0 16px;border:1px solid #ddd6fe!important;background:linear-gradient(135deg,#fff,#f5f3ff)!important"><h3 style="margin:0 0 8px">🔐 License activation</h3><div id="licenseStatus" class="meta">Checking license status…</div><div id="licenseActivateRow" class="row" style="margin-top:12px"><input id="licenseKey" type="text" placeholder="MO-XXXXXX-XXXXXX-XXXXXX" style="flex:1;min-width:220px;text-transform:uppercase"><button id="redeemBtn" class="btn" type="button">Activate / Redeem</button></div><div id="licenseMsg" class="meta" style="margin-top:8px"></div></section>
 <section id="adminCard" class="card hide" style="margin:0 0 16px"><h3 style="margin:0 0 10px">Admin · License management</h3><div class="row"><label>Validity <select id="keyDuration"><option value="1">1 month</option><option value="3">3 months</option><option value="6">6 months</option><option value="12">12 months</option></select></label><label>Quantity <input id="keyQuantity" type="number" min="1" max="100" value="1" style="width:90px"></label><button id="generateKeysBtn" class="btn" type="button">Generate keys</button></div><div id="generatedKeys" style="margin-top:10px"></div><hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0"><div class="row"><input id="revokeUserId" placeholder="User UUID to revoke license" style="flex:1;min-width:220px"><button id="revokeUserBtn" class="danger" type="button">Revoke user license</button></div><div class="row" style="margin-top:10px"><input id="revokeKey" placeholder="Unused license key to revoke" style="flex:1;min-width:220px"><button id="revokeKeyBtn" class="secondary" type="button">Revoke unused key</button></div><div id="adminMsg" class="meta" style="margin-top:8px"></div></section>
+
+<section id="contentStudio" class="card hide" style="margin:0 0 16px;border:1px solid #c7d2fe!important;background:linear-gradient(145deg,#fff,#f8faff)!important">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div><div class="eyebrow" style="color:#5b4ab8">CORTEX CONTROL CENTER</div><h2 style="margin:4px 0 6px">Content Studio</h2><p class="meta" style="margin:0">Manage exams, modules and questions without editing app code. Questions are archived rather than permanently deleted so attempt history remains safe.</p></div>
+    <button id="refreshStudioBtn" class="secondary" type="button">Refresh data</button>
+  </div>
+  <div id="studioMsg" class="meta" role="status" style="margin:12px 0"></div>
+  <details open style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:12px 0">
+    <summary style="font-weight:850;cursor:pointer">1. Exam & module manager</summary>
+    <input id="editModuleId" type="hidden">
+    <div class="setup-grid" style="margin-top:12px">
+      <label>Exam name<input id="moduleExamName" placeholder="e.g. Haryana Medical Officer" style="width:100%;margin-top:5px"></label>
+      <label>Exam code<input id="moduleExamCode" placeholder="e.g. haryana_mo" style="width:100%;margin-top:5px"></label>
+      <label>Module name<input id="moduleName" placeholder="e.g. 2024 PYQs / Medicine" style="width:100%;margin-top:5px"></label>
+      <label>Display order<input id="moduleSort" type="number" min="1" value="10" style="width:100%;margin-top:5px"></label>
+    </div>
+    <label style="display:block;margin-top:10px">Description<textarea id="moduleDescription" rows="2" placeholder="Optional notes about this module" style="width:100%;margin-top:5px"></textarea></label>
+    <div class="row" style="margin-top:10px"><button id="saveModuleBtn" class="btn" type="button">Save module</button><button id="resetModuleBtn" class="secondary" type="button">Clear form</button></div>
+    <div id="moduleList" style="margin-top:12px"></div>
+  </details>
+  <details open style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:12px 0">
+    <summary style="font-weight:850;cursor:pointer">2. Question bank manager</summary>
+    <div class="setup-grid" style="margin-top:12px">
+      <label>Module<select id="adminQuestionModule" style="width:100%;margin-top:5px"></select></label>
+      <label>Year filter<select id="adminQuestionYear" style="width:100%;margin-top:5px"><option value="all">All years</option></select></label>
+      <label style="grid-column:1/-1">Search question text / ID / subject<input id="adminQuestionSearch" placeholder="Type a word, question ID or subject" style="width:100%;margin-top:5px"></label>
+    </div>
+    <div class="row" style="margin:10px 0"><button id="loadQuestionsBtn" class="secondary" type="button">Load questions</button><button id="newQuestionBtn" class="btn" type="button">+ New question</button></div>
+    <div id="adminQuestionList" style="display:grid;gap:8px"></div>
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0">
+    <h3 id="questionFormTitle" style="margin:0 0 10px">Add a question</h3>
+    <input id="editQuestionId" type="hidden">
+    <div class="setup-grid">
+      <label>Module<select id="questionModule" style="width:100%;margin-top:5px"></select></label>
+      <label>Year<input id="questionYear" type="number" min="1900" max="2100" value="2024" style="width:100%;margin-top:5px"></label>
+      <label>Question number<input id="questionNumber" type="number" min="1" value="1" style="width:100%;margin-top:5px"></label>
+      <label>Subject / topic<input id="questionSubject" placeholder="e.g. Pharmacology" style="width:100%;margin-top:5px"></label>
+    </div>
+    <label style="display:block;margin-top:10px">Question text<textarea id="questionText" rows="3" required placeholder="Enter the complete question" style="width:100%;margin-top:5px"></textarea></label>
+    <div class="setup-grid" style="margin-top:10px">
+      <label>Option A<input id="questionOptionA" style="width:100%;margin-top:5px"></label>
+      <label>Option B<input id="questionOptionB" style="width:100%;margin-top:5px"></label>
+      <label>Option C<input id="questionOptionC" style="width:100%;margin-top:5px"></label>
+      <label>Option D<input id="questionOptionD" style="width:100%;margin-top:5px"></label>
+      <label>Correct option<select id="questionAnswer" style="width:100%;margin-top:5px"><option value="1">A</option><option value="2">B</option><option value="3">C</option><option value="4">D</option></select></label>
+      <label>Verification status<select id="questionVerification" style="width:100%;margin-top:5px"><option value="pending">Pending</option><option value="verified">Verified</option><option value="needs_review">Needs review</option></select></label>
+    </div>
+    <label style="display:block;margin-top:10px">Explanation<textarea id="questionExplanation" rows="3" placeholder="Why is this answer correct?" style="width:100%;margin-top:5px"></textarea></label>
+    <label style="display:block;margin-top:10px">Related / possible questions<textarea id="questionPossible" rows="2" placeholder="Optional related questions or revision points" style="width:100%;margin-top:5px"></textarea></label>
+    <label style="display:block;margin-top:10px">Source / verification notes<textarea id="questionSourceNotes" rows="2" placeholder="Reference, page number, source notes" style="width:100%;margin-top:5px"></textarea></label>
+    <div class="row" style="margin-top:12px"><button id="saveQuestionBtn" class="btn" type="button">Save question</button><button id="resetQuestionBtn" class="secondary" type="button">Clear form</button><button id="archiveQuestionBtn" class="danger hide" type="button">Archive question</button></div>
+  </details>
+  <details style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:12px 0">
+    <summary style="font-weight:850;cursor:pointer">3. Bulk question import (JSON)</summary>
+    <p class="meta">Paste an array of question objects using database field names: year, question_number, question_text, option_a, option_b, option_c, option_d, correct_option, explanation. Questions will be added to the selected module.</p>
+    <label>Target module<select id="bulkQuestionModule" style="width:100%;margin-top:5px"></select></label>
+    <textarea id="bulkQuestionJson" rows="7" placeholder='[{"year":2024,"question_number":1,"question_text":"Example?","option_a":"A","option_b":"B","option_c":"C","option_d":"D","correct_option":1}]' style="width:100%;margin-top:8px;font-family:monospace"></textarea>
+    <button id="importQuestionsBtn" class="btn" type="button" style="margin-top:8px">Import JSON questions</button>
+    <div class="meta" style="margin-top:8px">Import validates required fields and processes batches. Existing questions are not overwritten.</div>
+  </details>
+</section>
 <div id="historyStats" class="stats" style="margin-top:0"></div>
 <section id="modeChoice" style="margin:8px 0 24px">
 <h2 style="margin:4px 0 8px;font-size:25px">Choose your study mode</h2>
@@ -452,11 +513,10 @@ hr{border-color:#e4ebea!important}
   <div class="choice-card">
     <div class="eyebrow">Question source</div>
     <div style="font-size:22px;font-weight:850;margin:8px 0">Choose your PYQ pool</div>
-    <div class="sub">All years or a specific Rajasthan MO PYQ year.</div>
-    <select id="year" style="width:100%;margin-top:16px">
-      <option value="all">All Years · 800 PYQs</option>
-      <option>2015</option><option>2016</option><option>2017</option><option>2018</option>
-      <option>2019</option><option>2020</option><option>2022</option><option>2024</option>
+    <div class="sub">Select an exam module, then choose a year.</div>
+    <label style="display:block;font-size:13px;font-weight:700;color:#4b5563;margin-top:12px">Exam / module</label><select id="examModule" style="width:100%;margin-top:6px"></select>
+    <label style="display:block;font-size:13px;font-weight:700;color:#4b5563;margin-top:12px">Question year</label><select id="year" style="width:100%;margin-top:6px">
+      <option value="all">All Years</option>
     </select>
     <label style="display:block;font-size:13px;font-weight:700;color:#4b5563;margin-top:14px">Question status filter</label><select id="statusFilter" style="width:100%;margin-top:6px"><option value="unattempted">Unattempted only</option><option value="all">All questions (including attempted)</option><option value="attempted">Attempted only</option><option value="incorrect">Incorrect only (latest attempt)</option><option value="correct">Correct only (latest attempt)</option></select>
     <div style="margin-top:15px;padding:12px;border-radius:12px;background:#f5f3ff;color:#5b21b6;font-size:13px">
@@ -506,6 +566,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLI
 
 let qs=[], index=0, answers={}, marked={}, secondsLeft=0, timerId=null, submitted=false, retryMode=false, studyMode=null;
 let currentUser=null, attemptedIds=new Set(), attemptHistory=new Map(), authMode="login", loading=false, licenseActive=false, isAppAdmin=false, recoveryMode=false, historyReady=false, pendingAttemptSaves=new Set();
+let adminModules=[], adminQuestionRows=[], studioLoading=false;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -581,6 +642,7 @@ async function refreshLicenseStatus(){
   }finally{
     $("licenseActivateRow").classList.toggle("hide",licenseActive||isAppAdmin);
     $("adminCard").classList.toggle("hide",!isAppAdmin);
+    $("contentStudio").classList.toggle("hide",!isAppAdmin);
     start.disabled=!(licenseActive||isAppAdmin);
     start.style.opacity=(licenseActive||isAppAdmin)?"1":".5";
   }
@@ -628,6 +690,8 @@ async function loadUserData(){
   $("userEmail").textContent=currentUser.email||"User";
   await refreshAttemptHistory();
   await refreshLicenseStatus();
+  await loadExamModules();
+  if(isAppAdmin) await loadAdminStudio();
 }
 
 async function refreshAttemptHistory(){
@@ -670,7 +734,7 @@ async function refreshAttemptHistory(){
   historyReady=true;
 }
 function renderHistoryStats(){
-  const total=800, attempted=attemptedIds.size;
+  const total=attemptedIds.size>800?attemptedIds.size:800, attempted=attemptedIds.size;
   let correct=0, wrong=0;
   attemptHistory.forEach(r=>r.is_correct?correct++:wrong++);
   $("historyStats").innerHTML=
@@ -681,9 +745,208 @@ function renderHistoryStats(){
     "<span>Wrong last: "+wrong+"</span>";
 }
 
-async function fetchPool(year){
+
+function slugify(value){
+  return String(value||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60);
+}
+function setStudioMessage(message,isError){
+  if(!$("studioMsg"))return;
+  $("studioMsg").textContent=message||"";
+  $("studioMsg").style.color=isError?"#b91c1c":"#166534";
+}
+function moduleLabel(m){return m.exam_name+" · "+m.module_name;}
+function populateModuleSelect(id,modules,includeInactive){
+  const select=$(id);if(!select)return;
+  const previous=select.value;
+  const list=includeInactive?modules:modules.filter(m=>m.is_active);
+  select.innerHTML=list.map(m=>'<option value="'+esc(m.id)+'">'+esc(moduleLabel(m)+(m.is_active?'':' · ARCHIVED'))+'</option>').join("");
+  if(list.some(m=>m.id===previous))select.value=previous;
+  else if(list.length)select.value=list[0].id;
+}
+async function loadExamModules(){
+  const {data,error}=await supabaseClient.from("exam_modules").select("id,exam_code,exam_name,module_name,description,sort_order,is_active").eq("is_active",true).order("sort_order").order("exam_name").order("module_name");
+  if(error){console.error(error);return;}
+  const modules=data||[];
+  const previous=$("examModule")&&$("examModule").value;
+  $("examModule").innerHTML=modules.map(m=>'<option value="'+esc(m.id)+'">'+esc(moduleLabel(m))+'</option>').join("");
+  if(modules.some(m=>m.id===previous))$("examModule").value=previous;
+  populateModuleSelect("adminQuestionModule",adminModules,true);
+  populateModuleSelect("questionModule",adminModules,false);
+  populateModuleSelect("bulkQuestionModule",adminModules,false);
+  if(modules.length)await loadYearsForModule($("examModule").value);
+}
+async function loadYearsForModule(moduleId){
+  if(!moduleId)return;
+  const {data,error}=await supabaseClient.from("questions").select("year").eq("module_id",moduleId).eq("is_active",true).order("year");
+  if(error){console.error(error);return;}
+  const years=Array.from(new Set((data||[]).map(r=>r.year).filter(Number.isFinite))).sort((a,b)=>a-b);
+  const select=$("year"),previous=select.value;
+  select.innerHTML='<option value="all">All Years</option>'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join("");
+  if(years.includes(Number(previous)))select.value=previous;else select.value="all";
+}
+function clearModuleForm(){
+  $("editModuleId").value="";$("moduleExamName").value="";$("moduleExamCode").value="";
+  $("moduleName").value="";$("moduleDescription").value="";$("moduleSort").value="10";
+  $("saveModuleBtn").textContent="Save module";
+}
+function renderModuleList(){
+  const target=$("moduleList");
+  if(!adminModules.length){target.innerHTML='<p class="meta">No modules found.</p>';return;}
+  target.innerHTML=adminModules.map(m=>'<div class="review-item" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b>'+esc(moduleLabel(m))+'</b><div class="meta">'+esc(m.exam_code)+' · '+(m.is_active?'Active':'Archived')+(m.description?' · '+esc(m.description):'')+'</div></div><div class="row"><button class="secondary" type="button" data-edit-module="'+esc(m.id)+'">Edit</button><button class="'+(m.is_active?'danger':'secondary')+'" type="button" data-toggle-module="'+esc(m.id)+'">'+(m.is_active?'Archive':'Restore')+'</button></div></div>').join("");
+}
+async function loadAdminStudio(){
+  if(!isAppAdmin||studioLoading)return;
+  studioLoading=true;
+  setStudioMessage("Loading modules and questions…",false);
+  try{
+    const {data,error}=await supabaseClient.from("exam_modules").select("id,exam_code,exam_name,module_name,description,sort_order,is_active").order("sort_order").order("exam_name").order("module_name");
+    if(error)throw error;
+    adminModules=data||[];
+    populateModuleSelect("adminQuestionModule",adminModules,true);
+    populateModuleSelect("questionModule",adminModules,false);
+    populateModuleSelect("bulkQuestionModule",adminModules,false);
+    renderModuleList();
+    await loadExamModules();
+    await loadAdminQuestions();
+    setStudioMessage("Content Studio ready · "+adminModules.length+" module(s).",false);
+  }catch(e){setStudioMessage(e.message||"Could not load admin content. Check permissions and connection.",true);}
+  finally{studioLoading=false;}
+}
+function readModuleForm(){
+  const examName=$("moduleExamName").value.trim(),moduleName=$("moduleName").value.trim();
+  return {exam_name:examName,exam_code:slugify($("moduleExamCode").value||examName),module_name:moduleName,description:$("moduleDescription").value.trim(),sort_order:Math.max(1,Number($("moduleSort").value)||10),is_active:true};
+}
+$("moduleExamName").addEventListener("blur",()=>{if(!$("moduleExamCode").value.trim())$("moduleExamCode").value=slugify($("moduleExamName").value);});
+$("saveModuleBtn").addEventListener("click",async()=>{
+  if(!isAppAdmin)return;
+  const row=readModuleForm();
+  if(!row.exam_name||!row.exam_code||!row.module_name){setStudioMessage("Exam name, exam code and module name are required.",true);return;}
+  const button=$("saveModuleBtn");button.disabled=true;setStudioMessage("Saving module…",false);
+  try{
+    const id=$("editModuleId").value;
+    const result=id?await supabaseClient.from("exam_modules").update({...row,updated_at:new Date().toISOString()}).eq("id",id).select().single():await supabaseClient.from("exam_modules").insert(row).select().single();
+    if(result.error)throw result.error;
+    clearModuleForm();await loadAdminStudio();setStudioMessage(id?"Module updated.":"Module created successfully.",false);
+  }catch(e){setStudioMessage(e.message||"Could not save module.",true);}
+  finally{button.disabled=false;}
+});
+$("resetModuleBtn").addEventListener("click",clearModuleForm);
+$("moduleList").addEventListener("click",async event=>{
+  const edit=event.target.closest("[data-edit-module]"),toggle=event.target.closest("[data-toggle-module]");
+  if(edit){
+    const m=adminModules.find(x=>x.id===edit.dataset.editModule);if(!m)return;
+    $("editModuleId").value=m.id;$("moduleExamName").value=m.exam_name;$("moduleExamCode").value=m.exam_code;
+    $("moduleName").value=m.module_name;$("moduleDescription").value=m.description||"";$("moduleSort").value=m.sort_order;
+    $("saveModuleBtn").textContent="Update module";$("moduleExamName").scrollIntoView({behavior:"smooth",block:"center"});return;
+  }
+  if(toggle){
+    const m=adminModules.find(x=>x.id===toggle.dataset.toggleModule);if(!m)return;
+    const action=m.is_active?"archive":"restore";
+    if(!confirm("Are you sure you want to "+action+" this module? Existing questions and attempts will be preserved."))return;
+    const {error}=await supabaseClient.from("exam_modules").update({is_active:!m.is_active,updated_at:new Date().toISOString()}).eq("id",m.id);
+    if(error){setStudioMessage(error.message,true);return;}
+    await loadAdminStudio();setStudioMessage("Module "+(m.is_active?"archived.":"restored."),false);
+  }
+});
+function clearQuestionForm(){
+  $("editQuestionId").value="";$("questionFormTitle").textContent="Add a question";
+  ["questionText","questionOptionA","questionOptionB","questionOptionC","questionOptionD","questionExplanation","questionPossible","questionSourceNotes","questionSubject"].forEach(id=>$(id).value="");
+  $("questionYear").value=new Date().getFullYear();$("questionNumber").value="1";$("questionAnswer").value="1";$("questionVerification").value="pending";
+  $("archiveQuestionBtn").classList.add("hide");$("saveQuestionBtn").textContent="Save question";
+}
+function questionFormRow(){
+  const module=adminModules.find(m=>m.id===$("questionModule").value);
+  if(!module)throw new Error("Select a module first.");
+  const year=Number($("questionYear").value),number=Number($("questionNumber").value);
+  if(!Number.isInteger(year)||year<1900||year>2100)throw new Error("Enter a valid question year.");
+  if(!Number.isInteger(number)||number<1)throw new Error("Question number must be 1 or higher.");
+  const question=$("questionText").value.trim();
+  const a=$("questionOptionA").value.trim(),b=$("questionOptionB").value.trim(),c=$("questionOptionC").value.trim(),d=$("questionOptionD").value.trim();
+  if(!question||!a||!b||!c||!d)throw new Error("Question text and all four options are required.");
+  return {exam_code:module.exam_code,module_id:module.id,year:year,question_number:number,subject:$("questionSubject").value.trim(),question_text:question,option_a:a,option_b:b,option_c:c,option_d:d,correct_option:Number($("questionAnswer").value),explanation:$("questionExplanation").value.trim(),possible_questions:$("questionPossible").value.trim(),verification_status:$("questionVerification").value,source_notes:$("questionSourceNotes").value.trim(),is_active:true};
+}
+async function saveQuestion(){
+  if(!isAppAdmin)return;
+  let row;try{row=questionFormRow();}catch(e){setStudioMessage(e.message,true);return;}
+  const id=$("editQuestionId").value,button=$("saveQuestionBtn");button.disabled=true;setStudioMessage("Saving question…",false);
+  try{
+    let result;
+    if(id)result=await supabaseClient.from("questions").update(row).eq("id",id).select("id").single();
+    else {row.id=(crypto&&crypto.randomUUID)?crypto.randomUUID():"q_"+Date.now()+"_"+Math.random().toString(36).slice(2,10);result=await supabaseClient.from("questions").insert(row).select("id").single();}
+    if(result.error)throw result.error;
+    clearQuestionForm();await loadAdminQuestions();await loadExamModules();
+    setStudioMessage(id?"Question updated. Existing attempt history is preserved.":"Question added successfully.",false);
+  }catch(e){setStudioMessage(e.message||"Could not save question.",true);}
+  finally{button.disabled=false;}
+}
+$("saveQuestionBtn").addEventListener("click",saveQuestion);
+$("resetQuestionBtn").addEventListener("click",clearQuestionForm);
+$("newQuestionBtn").addEventListener("click",()=>{clearQuestionForm();$("questionModule").value=$("adminQuestionModule").value||$("questionModule").value;$("questionFormTitle").scrollIntoView({behavior:"smooth",block:"center"});});
+$("archiveQuestionBtn").addEventListener("click",async()=>{
+  const id=$("editQuestionId").value;if(!id||!confirm("Archive this question? It will disappear from practice, but its attempt history will remain safe."))return;
+  const {error}=await supabaseClient.from("questions").update({is_active:false}).eq("id",id);
+  if(error){setStudioMessage(error.message,true);return;}
+  clearQuestionForm();await loadAdminQuestions();await loadExamModules();setStudioMessage("Question archived. Attempt history preserved.",false);
+});
+async function loadAdminQuestions(){
+  if(!isAppAdmin)return;
+  const moduleId=$("adminQuestionModule").value;
+  if(!moduleId){$("adminQuestionList").innerHTML='<p class="meta">Create or select a module first.</p>';return;}
+  $("adminQuestionList").innerHTML='<p class="meta">Loading questions…</p>';
+  const {data,error}=await supabaseClient.from("questions").select("id,exam_code,module_id,year,question_number,subject,question_text,option_a,option_b,option_c,option_d,correct_option,explanation,possible_questions,verification_status,source_notes,is_active").eq("module_id",moduleId).order("year",{ascending:true}).order("question_number",{ascending:true}).limit(1000);
+  if(error)throw error;
+  adminQuestionRows=data||[];
+  const year=$("adminQuestionYear").value,search=$("adminQuestionSearch").value.trim().toLowerCase();
+  const rows=adminQuestionRows.filter(q=>(year==="all"||String(q.year)===year)&&(!search||[q.id,q.subject,q.question_text,q.source_notes].some(v=>String(v||"").toLowerCase().includes(search))));
+  $("adminQuestionYear").innerHTML='<option value="all">All years</option>'+Array.from(new Set(adminQuestionRows.map(q=>q.year))).sort((a,b)=>a-b).map(y=>'<option value="'+y+'">'+y+'</option>').join("");
+  $("adminQuestionYear").value=Array.from($("adminQuestionYear").options).some(o=>o.value===year)?year:"all";
+  $("adminQuestionList").innerHTML=rows.length?rows.map(q=>'<div class="review-item" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;opacity:'+(q.is_active?1:.65)+'"><div style="flex:1;min-width:180px"><b>'+esc(q.year)+' · Q'+esc(q.question_number)+' · '+esc(q.subject||"Uncategorized")+'</b><div style="margin-top:4px;line-height:1.45">'+esc(q.question_text)+'</div><div class="meta">'+esc(q.id)+' · '+(q.is_active?'Active':'Archived')+' · '+esc(q.verification_status||"pending")+'</div></div><button class="secondary" type="button" data-edit-question="'+esc(q.id)+'">Edit</button></div>').join(""):'<p class="meta">No questions match these filters.</p>';
+}
+$("loadQuestionsBtn").addEventListener("click",()=>loadAdminQuestions().catch(e=>setStudioMessage(e.message,true)));
+$("adminQuestionModule").addEventListener("change",()=>{loadAdminQuestions().catch(e=>setStudioMessage(e.message,true));$("questionModule").value=$("adminQuestionModule").value;});
+$("adminQuestionYear").addEventListener("change",()=>loadAdminQuestions().catch(e=>setStudioMessage(e.message,true)));
+$("adminQuestionSearch").addEventListener("input",()=>loadAdminQuestions().catch(e=>setStudioMessage(e.message,true)));
+$("adminQuestionList").addEventListener("click",event=>{
+  const button=event.target.closest("[data-edit-question]");if(!button)return;
+  const q=adminQuestionRows.find(x=>x.id===button.dataset.editQuestion);if(!q)return;
+  $("editQuestionId").value=q.id;$("questionFormTitle").textContent="Edit question · "+q.id;
+  $("questionModule").value=q.module_id;$("questionYear").value=q.year;$("questionNumber").value=q.question_number;$("questionSubject").value=q.subject||"";
+  $("questionText").value=q.question_text||"";$("questionOptionA").value=q.option_a||"";$("questionOptionB").value=q.option_b||"";
+  $("questionOptionC").value=q.option_c||"";$("questionOptionD").value=q.option_d||"";$("questionAnswer").value=String(q.correct_option);
+  $("questionExplanation").value=q.explanation||"";$("questionPossible").value=q.possible_questions||"";$("questionVerification").value=q.verification_status||"pending";$("questionSourceNotes").value=q.source_notes||"";
+  $("archiveQuestionBtn").classList.toggle("hide",!q.is_active);$("archiveQuestionBtn").textContent="Archive question";$("saveQuestionBtn").textContent="Update question";
+  $("questionFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
+});
+$("refreshStudioBtn").addEventListener("click",()=>loadAdminStudio().catch(e=>setStudioMessage(e.message,true)));
+$("importQuestionsBtn").addEventListener("click",async()=>{
+  if(!isAppAdmin)return;
+  const module=adminModules.find(m=>m.id===$("bulkQuestionModule").value);
+  if(!module){setStudioMessage("Select a target module for import.",true);return;}
+  let parsed;try{parsed=JSON.parse($("bulkQuestionJson").value);}catch(e){setStudioMessage("Invalid JSON. Paste a JSON array of question objects.",true);return;}
+  if(!Array.isArray(parsed)||!parsed.length){setStudioMessage("JSON must be a non-empty array.",true);return;}
+  if(parsed.length>1000){setStudioMessage("Import up to 1,000 questions per batch.",true);return;}
+  const rows=[];
+  for(let i=0;i<parsed.length;i++){
+    const q=parsed[i]||{},year=Number(q.year),number=Number(q.question_number),answer=Number(q.correct_option);
+    if(!Number.isInteger(year)||year<1900||year>2100||!Number.isInteger(number)||number<1||!String(q.question_text||"").trim()||![1,2,3,4].includes(answer)||!["option_a","option_b","option_c","option_d"].every(k=>String(q[k]||"").trim())){
+      setStudioMessage("Question "+(i+1)+" is missing a valid year, question number, question text, four options or correct_option (1–4). No rows imported.",true);return;
+    }
+    rows.push({id:(crypto&&crypto.randomUUID)?crypto.randomUUID():"q_"+Date.now()+"_"+i,exam_code:module.exam_code,module_id:module.id,year:year,question_number:number,subject:String(q.subject||""),question_text:String(q.question_text).trim(),option_a:String(q.option_a).trim(),option_b:String(q.option_b).trim(),option_c:String(q.option_c).trim(),option_d:String(q.option_d).trim(),correct_option:answer,explanation:String(q.explanation||""),possible_questions:String(q.possible_questions||""),verification_status:["pending","verified","needs_review"].includes(q.verification_status)?q.verification_status:"pending",source_notes:String(q.source_notes||""),is_active:true});
+  }
+  const button=$("importQuestionsBtn");button.disabled=true;setStudioMessage("Importing "+rows.length+" question(s)…",false);
+  try{
+    let inserted=0;
+    for(let i=0;i<rows.length;i+=100){const {error}=await supabaseClient.from("questions").insert(rows.slice(i,i+100));if(error)throw error;inserted+=Math.min(100,rows.length-i);}
+    $("bulkQuestionJson").value="";await loadAdminQuestions();await loadExamModules();setStudioMessage("Imported "+inserted+" questions successfully.",false);
+  }catch(e){setStudioMessage("Import stopped: "+(e.message||"unknown error")+". Check whether any earlier batch completed before retrying.",true);}
+  finally{button.disabled=false;}
+});
+$("examModule").addEventListener("change",()=>loadYearsForModule($("examModule").value));
+
+async function fetchPool(year,moduleId){
   let query=supabaseClient.from("questions")
     .select("id,year,question_number,question_text,option_a,option_b,option_c,option_d,correct_option,explanation,possible_questions,verification_status,source_notes")
+    .eq("is_active",true).eq("module_id",moduleId)
     .order("year",{ascending:true}).order("question_number",{ascending:true});
   if(year!=="all") query=query.eq("year",Number(year));
   const {data,error}=await query;
@@ -708,10 +971,12 @@ async function startTest(){
   if(!historyReady){alert("Attempt history has not loaded. Please reload the app or check your connection before starting.");return;}
   if(!licenseActive&&!isAppAdmin){alert("Please activate a valid license before starting a test.");return;}
   const year=$("year").value;
-  let n=Math.max(1,Math.min(800,Math.floor(Number($("qcount").value)||50)));
+  const moduleId=$("examModule").value;
+  if(!moduleId){alert("No active exam module is available. Please contact the administrator.");return;}
+  let n=Math.max(1,Math.min(5000,Math.floor(Number($("qcount").value)||50)));
   $("startBtn").disabled=true; $("startBtn").textContent="LOADING QUESTIONS…";
   try{
-    const pool=await fetchPool(year);
+    const pool=await fetchPool(year,moduleId);
     const mode=$("statusFilter").value;
     const eligible=pool.filter(q=>{
       const h=attemptHistory.get(q.id);
