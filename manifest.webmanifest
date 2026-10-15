@@ -6,14 +6,7 @@
   "background_color": "#071a2b",
   "theme_color": "#071a2b",
   "orientation": "portrait",
-  "icons": [
-    {
-      "src": "cortex-icon.svg?v=13",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
-  ],
+  "icons": [{"src":"cortex-icon.svg?v=14","sizes":"any","type":"image/svg+xml","purpose":"any"}],
   "scope": "./",
   "id": "./"
-}\n
+}
