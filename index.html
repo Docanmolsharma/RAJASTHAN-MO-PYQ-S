@@ -140,6 +140,15 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
 #palette button.unanswered{background:#e5e7eb!important;border-color:#d1d5db!important;color:#374151!important}
 #palette button.marked{outline:3px solid rgba(245,158,11,.35)!important}
 @media(max-width:500px){.result-categories{gap:6px}.result-filter{font-size:12px;padding:11px 4px}}
+.mode-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.mode-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:10px;width:100%;min-height:210px;padding:22px;border:2px solid #e5e7eb;border-radius:18px;background:#fff;color:#172033;box-shadow:0 8px 25px rgba(31,41,55,.06);white-space:normal}
+.mode-card .mode-icon{font-size:28px}.mode-card strong{font-size:21px}.mode-card>span:not(.mode-icon):not(.mode-cta){font-size:14px;font-weight:500;line-height:1.55;color:#667085}
+.mode-card .mode-cta{margin-top:auto;font-size:13px;font-weight:800;color:#4f46e5}.mode-card.active{border-color:#4f46e5;background:#f5f3ff;box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+.learning-feedback{margin:16px 0;padding:16px;border-radius:14px;border:1px solid #c7d2fe;background:#f5f3ff;line-height:1.6;color:#312e81}
+.learning-feedback.correct-feedback{background:#f0fdf4;border-color:#86efac;color:#166534}.learning-feedback.wrong-feedback{background:#fff7ed;border-color:#fdba74;color:#9a3412}
+#result .result-categories{display:grid!important}
+#palette button.answered-status{background:#dbeafe!important;border-color:#60a5fa!important;color:#1d4ed8!important}
+@media(max-width:650px){.mode-grid{grid-template-columns:1fr}.mode-card{min-height:0}}
 </style>
 </head>
 <body>
@@ -182,6 +191,14 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
 <section id="licenseCard" class="card" style="margin:0 0 16px;border:1px solid #ddd6fe!important;background:linear-gradient(135deg,#fff,#f5f3ff)!important"><h3 style="margin:0 0 8px">🔐 License activation</h3><div id="licenseStatus" class="meta">Checking license status…</div><div id="licenseActivateRow" class="row" style="margin-top:12px"><input id="licenseKey" type="text" placeholder="MO-XXXXXX-XXXXXX-XXXXXX" style="flex:1;min-width:220px;text-transform:uppercase"><button id="redeemBtn" class="btn" type="button">Activate / Redeem</button></div><div id="licenseMsg" class="meta" style="margin-top:8px"></div></section>
 <section id="adminCard" class="card hide" style="margin:0 0 16px"><h3 style="margin:0 0 10px">Admin · License management</h3><div class="row"><label>Validity <select id="keyDuration"><option value="1">1 month</option><option value="3">3 months</option><option value="6">6 months</option><option value="12">12 months</option></select></label><label>Quantity <input id="keyQuantity" type="number" min="1" max="100" value="1" style="width:90px"></label><button id="generateKeysBtn" class="btn" type="button">Generate keys</button></div><div id="generatedKeys" style="margin-top:10px"></div><hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0"><div class="row"><input id="revokeUserId" placeholder="User UUID to revoke license" style="flex:1;min-width:220px"><button id="revokeUserBtn" class="danger" type="button">Revoke user license</button></div><div class="row" style="margin-top:10px"><input id="revokeKey" placeholder="Unused license key to revoke" style="flex:1;min-width:220px"><button id="revokeKeyBtn" class="secondary" type="button">Revoke unused key</button></div><div id="adminMsg" class="meta" style="margin-top:8px"></div></section>
 <div id="historyStats" class="stats" style="margin-top:0"></div>
+<section id="modeChoice" style="margin:8px 0 24px">
+<h2 style="margin:4px 0 8px;font-size:25px">Choose your study mode</h2>
+<p style="margin:0 0 16px;color:#6b7280">Select the mode first, then create your question module.</p>
+<div class="mode-grid">
+<button id="learningModeBtn" class="mode-card" type="button" aria-pressed="false"><span class="mode-icon">📘</span><strong>Learning Mode</strong><span>After every answer, see whether it is correct and read the explanation immediately. No question palette.</span><span class="mode-cta">Learn as you solve →</span></button>
+<button id="examModeBtn" class="mode-card" type="button" aria-pressed="false"><span class="mode-icon">⏱️</span><strong>Exam Mode</strong><span>Solve without answer feedback or explanations. After submission, review Correct, Incorrect and Unattempted questions separately.</span><span class="mode-cta">Attempt like an exam →</span></button>
+</div><div id="modeNotice" class="meta" style="margin-top:12px">Choose Learning Mode or Exam Mode to continue.</div>
+</section><div id="moduleSetup" class="hide">
 <h2 style="margin-top:4px">Rajasthan Medical Officer PYQ Mock</h2>
 <p>Practice Rajasthan Medical Officer previous-year questions. Choose any number of questions.</p>
 <div class="setup-grid">
@@ -219,6 +236,7 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
   </div>
 </div>
 <br><button id="startBtn" class="btn" type="button">START TEST</button>
+</div>
 </section>
 
 <section id="exam" class="hide">
@@ -227,13 +245,14 @@ main{max-width:1020px!important;padding:24px 16px 50px!important}
 <div id="meta" class="meta"></div>
 <div id="question" class="question"></div>
 <div id="options"></div>
+<div id="learningFeedback" class="learning-feedback hide" aria-live="polite"></div>
 <div class="row">
 <button id="prevBtn" class="secondary" type="button">← Previous</button>
 <button id="markBtn" class="secondary" type="button">Mark for Review</button>
 <button id="nextBtn" class="btn" type="button">Next →</button>
 </div>
 </div>
-<div class="card"><b>Question Palette</b><p id="counts" class="meta"></p><div id="palette" class="palette"></div></div>
+<div id="paletteCard" class="card"><b>Question Palette</b><p id="counts" class="meta"></p><div id="palette" class="palette"></div></div>
 </section>
 
 <section id="result" class="card hide">
@@ -256,7 +275,7 @@ const SUPABASE_URL = "https://mtqmccfakojeruntimbi.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_U4ObHHggF40KVkkOCISA7A__4sBRD6p";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-let qs=[], index=0, answers={}, marked={}, secondsLeft=0, timerId=null, submitted=false, retryMode=false;
+let qs=[], index=0, answers={}, marked={}, secondsLeft=0, timerId=null, submitted=false, retryMode=false, studyMode=null;
 let currentUser=null, attemptedIds=new Set(), attemptHistory=new Map(), authMode="login", loading=false, licenseActive=false, isAppAdmin=false, recoveryMode=false, historyReady=false, pendingAttemptSaves=new Set();
 
 const $ = id => document.getElementById(id);
@@ -456,6 +475,7 @@ async function fetchPool(year){
 
 async function startTest(){
   if(!currentUser) return;
+  if(!studyMode){alert("Choose Learning Mode or Exam Mode first.");return;}
   if(!historyReady){alert("Attempt history has not loaded. Please reload the app or check your connection before starting.");return;}
   if(!licenseActive&&!isAppAdmin){alert("Please activate a valid license before starting a test.");return;}
   const year=$("year").value;
@@ -477,6 +497,7 @@ async function startTest(){
     n=Math.min(n,eligible.length);
     qs=eligible.slice().sort(()=>Math.random()-0.5).slice(0,n);
     index=0; answers={}; marked={}; submitted=false; retryMode=false;
+    $("paletteCard").classList.toggle("hide",studyMode==="learning");$("markBtn").classList.toggle("hide",studyMode==="learning");
     secondsLeft=qs.length*60;
     $("setup").classList.add("hide"); $("result").classList.add("hide");
     $("exam").classList.remove("hide"); $("topbar").classList.remove("hide");
@@ -502,37 +523,34 @@ function updateTimer(){
 
 function render(){
   const q=qs[index], selected=answers[q.id], answered=selected!==undefined;
-  $("meta").textContent=q.year+" • Q"+q.qno+" • "+(index+1)+"/"+qs.length;
+  const learning=studyMode==="learning", reveal=learning&&answered;
+  $("meta").textContent=q.year+" • Q"+q.qno+" • "+(index+1)+"/"+qs.length+" • "+(learning?"Learning Mode":"Exam Mode");
   document.querySelectorAll(".retry-note").forEach(e=>e.remove());
-  if(retryMode){
-    $("question").insertAdjacentHTML("beforebegin",
-      '<div class="retry-note">Retry Quiz • '+qs.length+' questions • '+qs.length+' minutes • Wrong + Unattempted only</div>'
-    );
-  }
+  if(retryMode)$("question").insertAdjacentHTML("beforebegin",'<div class="retry-note">Retry Quiz • '+qs.length+' questions • '+qs.length+' minutes • Wrong + Unattempted only</div>');
   $("question").textContent=q.question;
   $("options").innerHTML=q.options.map(o=>{
-    let cls="opt";
-    if(answered && o.id===q.answer) cls+=" correct";
-    if(answered && o.id===selected && selected!==q.answer) cls+=" wrong";
-    if(answered) cls+=" locked";
-    return `<label class="${cls}"><input type="radio" name="answer" value="${o.id}" ${selected===o.id?"checked":""} ${answered?"disabled":""}> <b>${o.id}.</b> ${esc(o.text)}</label>`;
+    let cls="opt";if(reveal&&o.id===q.answer)cls+=" correct";if(reveal&&o.id===selected&&selected!==q.answer)cls+=" wrong";if(reveal)cls+=" locked";
+    return `<label class="${cls}"><input type="radio" name="answer" value="${o.id}" ${selected===o.id?"checked":""} ${reveal||submitted?"disabled":""}> <b>${o.id}.</b> ${esc(o.text)}</label>`;
   }).join("");
-  if(!answered){
-    document.querySelectorAll('input[name="answer"]').forEach(el=>el.addEventListener("change",()=>choose(el.value)));
-  }
+  if(!reveal&&!submitted)document.querySelectorAll('input[name="answer"]').forEach(el=>el.addEventListener("change",()=>choose(el.value)));
+  const feedback=$("learningFeedback");
+  if(reveal){
+    feedback.classList.remove("hide");feedback.classList.toggle("correct-feedback",selected===q.answer);feedback.classList.toggle("wrong-feedback",selected!==q.answer);
+    feedback.innerHTML='<strong>'+(selected===q.answer?'✓ Correct answer':'✕ Incorrect answer')+'</strong><br><b>Correct option: '+q.answer+'.</b> '+esc((q.options.find(o=>o.id===q.answer)||{}).text||'')+(q.explanation?'<div style="margin-top:9px"><b>Explanation</b><br>'+esc(q.explanation).replace(/\n/g,"<br>")+'</div>':'<div style="margin-top:9px">Explanation is not available for this question yet.</div>');
+  }else{feedback.classList.add("hide");feedback.innerHTML="";}
+  $("paletteCard").classList.toggle("hide",learning);$("markBtn").classList.toggle("hide",learning);
   $("markBtn").textContent=marked[q.id]?"Unmark Review":"Mark for Review";
-  $("counts").textContent="Attempted "+Object.keys(answers).length+" • Unattempted "+(qs.length-Object.keys(answers).length);
+  $("counts").textContent="Answered "+Object.keys(answers).length+" • Unanswered "+(qs.length-Object.keys(answers).length);
   $("bar").style.width=((index+1)/qs.length*100)+"%";
-  $("palette").innerHTML=qs.map((x,i)=>{const selected=answers[x.id];const status=selected===undefined?"unanswered":(selected===x.answer?"correct-status":"incorrect-status");return `<button type="button" class="${status}${marked[x.id]?" marked":""}" data-i="${i}" aria-label="Question ${i+1}: ${status.replace("-status","")}">${i+1}</button>`;}).join("");
+  $("palette").innerHTML=qs.map((x,i)=>{const value=answers[x.id];const status=value===undefined?"unanswered":(learning?(value===x.answer?"correct-status":"incorrect-status"):"answered-status");return `<button type="button" class="${status}${marked[x.id]?" marked":""}" data-i="${i}" aria-label="Question ${i+1}: ${status.replace("-status","")}">${i+1}</button>`;}).join("");
   document.querySelectorAll("#palette button").forEach(b=>b.addEventListener("click",()=>{index=Number(b.dataset.i);render();}));
 }
 
 async function choose(value){
   const q=qs[index];
-  if(answers[q.id]!==undefined || submitted) return;
-  answers[q.id]=value;
-  render();
-
+  if((studyMode==="learning"&&answers[q.id]!==undefined)||submitted)return;
+  answers[q.id]=value;render();
+  if(studyMode==="exam")return;
   const row={
     user_id:currentUser.id,
     question_id:q.id,
@@ -565,6 +583,14 @@ async function submitNow(){
   submitted=true;
   if(pendingAttemptSaves.size) await Promise.allSettled([...pendingAttemptSaves]);
   if(timerId){clearInterval(timerId);timerId=null;}
+  if(studyMode==="exam"){
+    const rows=qs.filter(q=>answers[q.id]!==undefined).map(q=>({user_id:currentUser.id,question_id:q.id,selected_option:["A","B","C","D"].indexOf(answers[q.id])+1,is_correct:answers[q.id]===q.answer}));
+    if(rows.length){
+      const {error}=await supabaseClient.from("question_attempts").insert(rows);
+      if(error){console.error(error);alert("Test result is calculated, but saving attempt history failed. Please check your connection.");}
+      else rows.forEach(row=>{attemptedIds.add(row.question_id);attemptHistory.set(row.question_id,{question_id:row.question_id,selected_option:row.selected_option,is_correct:row.is_correct,attempted_at:new Date().toISOString()});});
+    }
+  }
   var attempted=Object.keys(answers).length,correct=0,wrong=0;
   for(var k=0;k<qs.length;k++){
     var q=qs[k];
@@ -612,6 +638,14 @@ function showReviewCategory(category){
   }).join(""):'<div class="review-item">No '+category+' questions in this test.</div>';
 }function submitTest(auto){submitNow();}
 
+function selectStudyMode(mode){
+  studyMode=mode;$("moduleSetup").classList.remove("hide");
+  $("modeNotice").textContent=mode==="learning"?"Learning Mode selected: answer feedback and explanation appear after every question.":"Exam Mode selected: correctness and explanations stay hidden until you submit.";
+  $("learningModeBtn").classList.toggle("active",mode==="learning");$("examModeBtn").classList.toggle("active",mode==="exam");
+  $("learningModeBtn").setAttribute("aria-pressed",String(mode==="learning"));$("examModeBtn").setAttribute("aria-pressed",String(mode==="exam"));
+}
+$("learningModeBtn").addEventListener("click",()=>selectStudyMode("learning"));
+$("examModeBtn").addEventListener("click",()=>selectStudyMode("exam"));
 $("authBtn").addEventListener("click",handleAuth);
 $("authToggle").addEventListener("click",()=>setAuthMode(authMode==="login"?"signup":"login"));
 $("forgotBtn").addEventListener("click",async()=>{
@@ -682,8 +716,10 @@ $("wrongBtn").addEventListener("click",()=>{
 });
 $("newBtn").addEventListener("click",async()=>{
   await refreshAttemptHistory();
-  $("result").classList.add("hide"); $("result").style.display="none";
-  $("setup").classList.remove("hide");
+  $("result").classList.add("hide");$("result").style.display="none";$("setup").classList.remove("hide");
+  $("moduleSetup").classList.add("hide");$("modeChoice").classList.remove("hide");$("modeNotice").textContent="Choose a mode before setting up the next module.";
+  studyMode=null;$("learningModeBtn").classList.remove("active");$("examModeBtn").classList.remove("active");
+  $("learningModeBtn").setAttribute("aria-pressed","false");$("examModeBtn").setAttribute("aria-pressed","false");
 });
 
 setAuthMode("login");
