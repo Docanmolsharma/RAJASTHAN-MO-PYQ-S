@@ -3,10 +3,17 @@
   "short_name": "CORTEX",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#071a2b",
-  "theme_color": "#071a2b",
+  "background_color": "#03172d",
+  "theme_color": "#03172d",
   "orientation": "portrait",
-  "icons": [{"src":"cortex-icon.svg?v=14","sizes":"any","type":"image/svg+xml","purpose":"any"}],
+  "icons": [
+    {
+      "src": "cortex-icon.svg?v=15",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
   "scope": "./",
   "id": "./"
 }
