@@ -863,7 +863,7 @@ function questionFormRow(){
   const question=$("questionText").value.trim();
   const a=$("questionOptionA").value.trim(),b=$("questionOptionB").value.trim(),c=$("questionOptionC").value.trim(),d=$("questionOptionD").value.trim();
   if(!question||!a||!b||!c||!d)throw new Error("Question text and all four options are required.");
-  return {exam_code:module.exam_code,module_id:module.id,year:year,question_number:number,subject:$("questionSubject").value.trim(),question_text:question,option_a:a,option_b:b,option_c:c,option_d:d,correct_option:Number($("questionAnswer").value),explanation:$("questionExplanation").value.trim(),possible_questions:$("questionPossible").value.trim(),verification_status:$("questionVerification").value,source_notes:$("questionSourceNotes").value.trim(),is_active:true};
+  return {exam_code:module.exam_code,module_id:module.id,year:year,question_number:number,subject:$("questionSubject").value.trim(),question_text:question,option_a:a,option_b:b,option_c:c,option_d:d,correct_option:Number($("questionAnswer").value),explanation:$("questionExplanation").value.trim(),possible_questions:$("questionPossible").value.trim(),verification_status:$("questionVerification").value,source_notes:$("questionSourceNotes").value.trim(),is_active:(adminQuestionRows.find(q=>q.id===$("editQuestionId").value)||{is_active:true}).is_active};
 }
 async function saveQuestion(){
   if(!isAppAdmin)return;
@@ -883,10 +883,12 @@ $("saveQuestionBtn").addEventListener("click",saveQuestion);
 $("resetQuestionBtn").addEventListener("click",clearQuestionForm);
 $("newQuestionBtn").addEventListener("click",()=>{clearQuestionForm();$("questionModule").value=$("adminQuestionModule").value||$("questionModule").value;$("questionFormTitle").scrollIntoView({behavior:"smooth",block:"center"});});
 $("archiveQuestionBtn").addEventListener("click",async()=>{
-  const id=$("editQuestionId").value;if(!id||!confirm("Archive this question? It will disappear from practice, but its attempt history will remain safe."))return;
-  const {error}=await supabaseClient.from("questions").update({is_active:false}).eq("id",id);
+  const id=$("editQuestionId").value;const q=adminQuestionRows.find(x=>x.id===id);if(!id||!q)return;
+  const nextActive=!q.is_active,verb=nextActive?"restore":"archive";
+  if(!confirm("Are you sure you want to "+verb+" this question? Attempt history will be preserved."))return;
+  const {error}=await supabaseClient.from("questions").update({is_active:nextActive}).eq("id",id);
   if(error){setStudioMessage(error.message,true);return;}
-  clearQuestionForm();await loadAdminQuestions();await loadExamModules();setStudioMessage("Question archived. Attempt history preserved.",false);
+  clearQuestionForm();await loadAdminQuestions();await loadExamModules();setStudioMessage(nextActive?"Question restored.":"Question archived. Attempt history preserved.",false);
 });
 async function loadAdminQuestions(){
   if(!isAppAdmin)return;
@@ -914,7 +916,7 @@ $("adminQuestionList").addEventListener("click",event=>{
   $("questionText").value=q.question_text||"";$("questionOptionA").value=q.option_a||"";$("questionOptionB").value=q.option_b||"";
   $("questionOptionC").value=q.option_c||"";$("questionOptionD").value=q.option_d||"";$("questionAnswer").value=String(q.correct_option);
   $("questionExplanation").value=q.explanation||"";$("questionPossible").value=q.possible_questions||"";$("questionVerification").value=q.verification_status||"pending";$("questionSourceNotes").value=q.source_notes||"";
-  $("archiveQuestionBtn").classList.toggle("hide",!q.is_active);$("archiveQuestionBtn").textContent="Archive question";$("saveQuestionBtn").textContent="Update question";
+  $("archiveQuestionBtn").classList.remove("hide");$("archiveQuestionBtn").textContent=q.is_active?"Archive question":"Restore question";$("saveQuestionBtn").textContent="Update question";
   $("questionFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
 });
 $("refreshStudioBtn").addEventListener("click",()=>loadAdminStudio().catch(e=>setStudioMessage(e.message,true)));
@@ -941,7 +943,7 @@ $("importQuestionsBtn").addEventListener("click",async()=>{
   }catch(e){setStudioMessage("Import stopped: "+(e.message||"unknown error")+". Check whether any earlier batch completed before retrying.",true);}
   finally{button.disabled=false;}
 });
-$("examModule").addEventListener("change",()=>loadYearsForModule($("examModule").value));
+$("examModule").addEventListener("change",()=>{loadYearsForModule($("examModule").value);const selected=adminModules.find(m=>m.id===$("examModule").value);const heading=document.querySelector("#moduleSetup h2");if(heading&&selected)heading.textContent=moduleLabel(selected)+" · PYQ Practice";});
 
 async function fetchPool(year,moduleId){
   let query=supabaseClient.from("questions")
