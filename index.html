@@ -435,7 +435,7 @@ function renderHistoryStats(){
 
 async function fetchPool(year){
   let query=supabaseClient.from("questions")
-    .select("id,year,question_number,question_text,option_a,option_b,option_c,option_d,correct_option,explanation")
+    .select("id,year,question_number,question_text,option_a,option_b,option_c,option_d,correct_option,explanation,possible_questions,verification_status,source_notes")
     .order("year",{ascending:true}).order("question_number",{ascending:true});
   if(year!=="all") query=query.eq("year",Number(year));
   const {data,error}=await query;
@@ -447,7 +447,10 @@ async function fetchPool(year){
       {id:"C",text:r.option_c},{id:"D",text:r.option_d}
     ],
     answer:optionLetter(r.correct_option),
-    explanation:r.explanation||""
+    explanation:r.explanation||"",
+    possibleQuestions:r.possible_questions||"",
+    verificationStatus:r.verification_status||"pending",
+    sourceNotes:r.source_notes||""
   }));
 }
 
@@ -599,8 +602,13 @@ function showReviewCategory(category){
     const q=item.q,selected=item.selected;
     const cls=selected===undefined?"unanswered":(selected===q.answer?"good":"bad");
     const response=selected===undefined?"Not answered":selected;
-    const exp=q.explanation?'<div style="margin-top:7px;color:#475467"><b>Explanation:</b> '+esc(q.explanation)+'</div>':"";
-    return '<div class="review-item '+cls+'"><b>'+(item.i+1)+'. '+esc(q.question)+'</b><br><small>Your answer: '+response+' | Correct answer: '+q.answer+'</small>'+exp+'</div>';
+    const exp=q.explanation?'<div style="margin-top:10px;color:#344054;line-height:1.55"><b>Explanation:</b><br>'+esc(q.explanation).replace(/\n/g,"<br>")+'</div>':"";
+    const possible=q.possibleQuestions?'<div style="margin-top:12px;padding:11px 12px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;color:#4c1d95;line-height:1.55"><b>Other possible questions from this topic:</b><br>'+esc(q.possibleQuestions).replace(/\n/g,"<br>")+'</div>':"";
+    const sources=q.sourceNotes?'<div style="margin-top:8px;color:#667085;font-size:12px"><b>Verification/source note:</b> '+esc(q.sourceNotes)+'</div>':"";
+    const status=q.verificationStatus==="verified"?'Verified':(q.verificationStatus==="needs_review"?'Needs review':'Verification pending');
+    const statusColor=q.verificationStatus==="verified"?'#15803d':(q.verificationStatus==="needs_review"?'#b45309':'#6b7280');
+    const badge='<div style="margin-top:8px;font-size:11px;font-weight:800;color:'+statusColor+'">Content status: '+status+'</div>';
+    return '<div class="review-item '+cls+'"><b>'+(item.i+1)+'. '+esc(q.question)+'</b><br><small>Your answer: '+response+' | Correct answer: '+q.answer+'</small>'+exp+possible+sources+badge+'</div>';
   }).join(""):'<div class="review-item">No '+category+' questions in this test.</div>';
 }function submitTest(auto){submitNow();}
 
