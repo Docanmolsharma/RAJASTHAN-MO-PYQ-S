@@ -21,12 +21,12 @@ h2{font-size:19px;margin:0 0 12px}.qtext{font-size:20px;line-height:1.5;font-wei
 </style>
 </head>
 <body>
-<header><div class="brand">CORTEX CONTROL CENTER</div><div class="title">800-Question Accuracy Review</div><div style="font-size:13px;color:#cbd5e1;margin-top:4px">Shared review workspace · progress saves automatically</div></header>
+<header><div class="brand">CORTEX CONTROL CENTER</div><div class="title">First 50 · Accuracy Review</div><div style="font-size:13px;color:#cbd5e1;margin-top:4px">Pilot batch: first 50 questions · progress saves automatically</div></header>
 <main>
 <section class="card" id="loading">Loading the review set…</section>
 <section id="workspace" hidden>
  <section class="card">
-  <div class="kpis"><div class="kpi"><span class="muted">Total questions</span><strong id="total">800</strong></div><div class="kpi"><span class="muted">Fully reviewed</span><strong id="reviewed">0</strong></div><div class="kpi"><span class="muted">Remaining</span><strong id="remaining">800</strong></div></div>
+  <div class="kpis"><div class="kpi"><span class="muted">Total questions</span><strong id="total">50</strong></div><div class="kpi"><span class="muted">Fully reviewed</span><strong id="reviewed">0</strong></div><div class="kpi"><span class="muted">Remaining</span><strong id="remaining">50</strong></div></div>
   <div class="progress"><div class="bar" id="bar"></div></div>
   <div class="row" style="justify-content:space-between"><span class="muted" id="progressLabel">0 of 800 fully reviewed</span><button class="secondary" id="resumeBtn">Resume next unchecked</button></div>
  </section>
@@ -59,7 +59,7 @@ const SUPABASE_URL="https://mtqmccfakojeruntimbi.supabase.co";
 const SUPABASE_KEY="sb_publishable_U4ObHHggF40KVkkOCISA7A__4sBRD6p";
 const TOKEN=new URLSearchParams(location.search).get("token");
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let questions=[], index=0, busy=false;
+let questions=[], index=0, busy=false;\nconst PILOT_BATCH_SIZE=50;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fullyReviewed=q=>q.stem_ok!==null&&q.stem_ok!==undefined&&q.explanation_ok!==null&&q.explanation_ok!==undefined;
