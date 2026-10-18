@@ -36,7 +36,7 @@ h2{font-size:19px;margin:0 0 12px}.qtext{font-size:20px;line-height:1.5;font-wei
   <div class="qtext" id="stem"></div>
   <div id="options" style="margin-top:12px"></div>
   <details style="margin-top:16px"><summary style="font-weight:850;cursor:pointer">Show correct answer & explanation</summary>
-   <div class="card" style="margin:12px 0 0;background:#f8fafc;box-shadow:none"><div class="label">Correct option</div><div id="correct" style="font-weight:850"></div><div class="label" style="margin-top:15px">Current explanation</div><div class="explanation" id="explanation"></div><div class="label" style="margin-top:15px">Possible related questions / notes</div><div class="explanation muted" id="possible"></div><div class="label" style="margin-top:15px">Existing verification status</div><div id="existingStatus"></div><div class="label" style="margin-top:15px">Source notes</div><div class="explanation muted" id="sourceNotes"></div></div>
+   <div class="card" style="margin:12px 0 0;background:#f8fafc;box-shadow:none"><div class="label">Correct option</div><div id="correct" style="font-weight:850"></div><div class="label" style="margin-top:15px">Original English explanation</div><div class="explanation" id="explanation"></div><div class="label" style="margin-top:15px">Hinglish explanation</div><div class="explanation" id="explanationHinglish"></div><div class="label" style="margin-top:15px">Possible related questions / notes</div><div class="explanation muted" id="possible"></div><div class="label" style="margin-top:15px">Existing verification status</div><div id="existingStatus"></div><div class="label" style="margin-top:15px">Source notes</div><div class="explanation muted" id="sourceNotes"></div></div>
   </details>
  </section>
  <section class="card">
@@ -74,7 +74,7 @@ function render(){
  $("stem").textContent=q.question_text||"[Question stem empty]";
  $("options").innerHTML=[["A",q.option_a],["B",q.option_b],["C",q.option_c],["D",q.option_d]].map(([l,v])=>'<div class="option '+(Number(q.correct_option)==="ABCD".indexOf(l)+1?"answer":"")+'"><b>'+l+". </b>"+esc(v||"")+"</div>").join("");
  $("correct").textContent=q.correct_option?"Option "+"ABCD"[Number(q.correct_option)-1]:"Not specified";
- $("explanation").textContent=q.explanation||"[No explanation saved]";
+ $("explanation").textContent=q.explanation||"[No English explanation saved]";$("explanationHinglish").textContent=q.explanation_hinglish||"Hinglish translation pending for this question.";
  $("possible").textContent=q.possible_questions||"—";$("sourceNotes").textContent=q.source_notes||"—";$("existingStatus").textContent=q.verification_status||"Not set";
  $("notes").value=q.review_notes||"";
  document.querySelectorAll("[data-field]").forEach(b=>{const v=q[b.dataset.field+"_ok"];b.classList.toggle("selected",v!==null&&v!==undefined&&String(v)==b.dataset.value);});
