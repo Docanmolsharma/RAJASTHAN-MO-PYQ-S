@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>CORTEX · 800 Question Review</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#172033;background:#f3f5fb}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f8fafc,#eef2ff);min-height:100vh}
+header{position:sticky;top:0;z-index:4;background:#111827;color:#fff;padding:14px 16px;box-shadow:0 8px 28px #11182725}
+.brand{font-size:12px;letter-spacing:.16em;color:#c4b5fd;font-weight:800}.title{font-size:22px;font-weight:900;margin-top:4px}
+main{max-width:850px;margin:18px auto;padding:0 13px 40px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 8px 28px #1f29370c}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.muted{color:#64748b}.progress{height:9px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:10px 0}.bar{height:100%;width:0;background:linear-gradient(90deg,#4f46e5,#0d9488);transition:width .2s}
+button,select,input,textarea{font:inherit;border-radius:11px}button{border:0;padding:11px 14px;font-weight:800;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:#4f46e5;color:#fff}.secondary{background:#eef2f7;color:#263449}.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}.bad{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}.selected{outline:3px solid #64748b;outline-offset:1px}
+select,input,textarea{border:1px solid #cbd5e1;padding:11px;width:100%;background:#fff}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.kpi{background:#f8fafc;border-radius:13px;padding:10px}.kpi strong{display:block;font-size:20px}
+h2{font-size:19px;margin:0 0 12px}.qtext{font-size:20px;line-height:1.5;font-weight:750;white-space:pre-wrap}.option{padding:10px 12px;border:1px solid #e2e8f0;border-radius:11px;margin-top:7px;white-space:pre-wrap}.answer{background:#f0fdf4;border-color:#86efac}.explanation{line-height:1.6;white-space:pre-wrap}
+.label{font-size:12px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:#64748b;margin-bottom:7px}.statusline{font-size:13px;min-height:20px;color:#047857}
+@media(max-width:560px){.card{padding:14px}.qtext{font-size:18px}.kpis{grid-template-columns:repeat(3,1fr)}button{padding:10px 11px}}
+</style>
+</head>
+<body>
+<header><div class="brand">CORTEX CONTROL CENTER</div><div class="title">800-Question Accuracy Review</div><div style="font-size:13px;color:#cbd5e1;margin-top:4px">Shared review workspace · progress saves automatically</div></header>
+<main>
+<section class="card" id="loading">Loading the review set…</section>
+<section id="workspace" hidden>
+ <section class="card">
+  <div class="kpis"><div class="kpi"><span class="muted">Total questions</span><strong id="total">800</strong></div><div class="kpi"><span class="muted">Fully reviewed</span><strong id="reviewed">0</strong></div><div class="kpi"><span class="muted">Remaining</span><strong id="remaining">800</strong></div></div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="row" style="justify-content:space-between"><span class="muted" id="progressLabel">0 of 800 fully reviewed</span><button class="secondary" id="resumeBtn">Resume next unchecked</button></div>
+ </section>
+ <section class="card">
+  <div class="row" style="justify-content:space-between;margin-bottom:12px"><div><div class="label">Question sequence</div><div id="position" style="font-weight:900;font-size:18px">Question 1 of 800</div></div><select id="jump" style="width:auto;max-width:190px"><option value="0">Jump to question…</option></select></div>
+  <div class="muted" id="meta" style="margin-bottom:12px"></div>
+  <div class="qtext" id="stem"></div>
+  <div id="options" style="margin-top:12px"></div>
+  <details style="margin-top:16px"><summary style="font-weight:850;cursor:pointer">Show correct answer & explanation</summary>
+   <div class="card" style="margin:12px 0 0;background:#f8fafc;box-shadow:none"><div class="label">Correct option</div><div id="correct" style="font-weight:850"></div><div class="label" style="margin-top:15px">Current explanation</div><div class="explanation" id="explanation"></div><div class="label" style="margin-top:15px">Possible related questions / notes</div><div class="explanation muted" id="possible"></div><div class="label" style="margin-top:15px">Existing verification status</div><div id="existingStatus"></div><div class="label" style="margin-top:15px">Source notes</div><div class="explanation muted" id="sourceNotes"></div></div>
+  </details>
+ </section>
+ <section class="card">
+  <h2>Review verdict</h2>
+  <p class="muted" style="margin-top:-4px">Dono fields ko alag-alag mark karein. Green = okay, red = problem. Har click par shared progress save hota hai.</p>
+  <div class="label">1. Question stem / options</div>
+  <div class="row" id="stemButtons"><button class="ok" data-field="stem" data-value="true">✓ Stem OK</button><button class="bad" data-field="stem" data-value="false">✕ Stem has problem</button></div>
+  <div class="label" style="margin-top:18px">2. Explanation correctness / authenticity</div>
+  <div class="row" id="explanationButtons"><button class="ok" data-field="explanation" data-value="true">✓ Explanation OK</button><button class="bad" data-field="explanation" data-value="false">✕ Explanation has problem</button></div>
+  <div class="label" style="margin-top:18px">Notes (optional: explain what is wrong / source to verify)</div>
+  <textarea id="notes" rows="3" placeholder="e.g. Option C should be correct; explanation needs a standard reference…"></textarea>
+  <div class="row" style="justify-content:space-between;margin-top:12px"><button class="secondary" id="saveNotes">Save notes</button><span class="statusline" id="saveStatus" aria-live="polite"></span></div>
+ </section>
+ <section class="card"><div class="row" style="justify-content:space-between"><button class="secondary" id="prev">← Previous</button><button class="primary" id="next">Next question →</button></div><div class="row" style="margin-top:10px"><button class="secondary" id="nextUnchecked">Next not fully reviewed ⤵</button><button class="secondary" id="export">Export review CSV</button></div><p class="muted" style="font-size:12px;margin-bottom:0">Review order: year ascending, then question number ascending. Shared link ke through aap aur friend dono ka progress same record mein save hota hai. CSV export backup ke liye hai.</p></section>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://mtqmccfakojeruntimbi.supabase.co";
+const SUPABASE_KEY="sb_publishable_U4ObHHggF40KVkkOCISA7A__4sBRD6p";
+const TOKEN=new URLSearchParams(location.search).get("token");
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let questions=[], index=0, busy=false;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fullyReviewed=q=>q.stem_ok!==null&&q.stem_ok!==undefined&&q.explanation_ok!==null&&q.explanation_ok!==undefined;
+function statusText(v){return v===true?"OK":v===false?"PROBLEM":"Not checked";}
+function reviewedCount(){return questions.filter(fullyReviewed).length;}
+function updateStats(){const n=reviewedCount();$("total").textContent=questions.length;$("reviewed").textContent=n;$("remaining").textContent=questions.length-n;$("bar").style.width=(questions.length?n/questions.length*100:0)+"%";$("progressLabel").textContent=n+" of "+questions.length+" fully reviewed";}
+function render(){
+ const q=questions[index];if(!q)return;
+ $("position").textContent="Question "+(index+1)+" of "+questions.length;
+ $("jump").value=String(index);
+ $("meta").textContent="Year: "+q.year+" · Q. No.: "+q.question_number+(q.subject?" · "+q.subject:"");
+ $("stem").textContent=q.question_text||"[Question stem empty]";
+ $("options").innerHTML=[["A",q.option_a],["B",q.option_b],["C",q.option_c],["D",q.option_d]].map(([l,v])=>'<div class="option '+(Number(q.correct_option)==="ABCD".indexOf(l)+1?"answer":"")+'"><b>'+l+". </b>"+esc(v||"")+"</div>").join("");
+ $("correct").textContent=q.correct_option?"Option "+"ABCD"[Number(q.correct_option)-1]:"Not specified";
+ $("explanation").textContent=q.explanation||"[No explanation saved]";
+ $("possible").textContent=q.possible_questions||"—";$("sourceNotes").textContent=q.source_notes||"—";$("existingStatus").textContent=q.verification_status||"Not set";
+ $("notes").value=q.review_notes||"";
+ document.querySelectorAll("[data-field]").forEach(b=>{const v=q[b.dataset.field+"_ok"];b.classList.toggle("selected",v!==null&&v!==undefined&&String(v)==b.dataset.value);});
+ $("prev").disabled=index===0;$("next").disabled=index===questions.length-1;
+ $("saveStatus").textContent="";updateStats();
+}
+async function load(){
+ if(!TOKEN){$("loading").textContent="This review link is missing its access token. Please use the complete shared link.";return;}
+ const {data,error}=await db.rpc("get_shared_question_review",{p_token:TOKEN});
+ if(error){$("loading").textContent="Could not load review: "+error.message;return;}
+ questions=data.questions||[];
+ if(!questions.length){$("loading").textContent="No questions found for this review link.";return;}
+ questions.sort((a,b)=>Number(a.year)-Number(b.year)||Number(a.question_number)-Number(b.question_number)||String(a.id).localeCompare(String(b.id)));
+ $("jump").innerHTML=questions.map((q,i)=>'<option value="'+i+'">'+(i+1)+". "+q.year+" · Q"+q.question_number+(fullyReviewed(q)?" ✓":"")+"</option>").join("");
+ const first=questions.findIndex(q=>!fullyReviewed(q));index=first<0?0:first;
+ $("loading").hidden=true;$("workspace").hidden=false;render();
+}
+async function saveCurrent(patch){
+ if(busy)return;const q=questions[index];busy=true;$("saveStatus").textContent="Saving…";
+ const updated={...q,...patch};
+ const {error}=await db.rpc("save_shared_question_review",{p_token:TOKEN,p_question_id:q.id,p_stem_ok:updated.stem_ok??null,p_explanation_ok:updated.explanation_ok??null,p_review_notes:updated.review_notes||""});
+ busy=false;
+ if(error){$("saveStatus").textContent="Save failed: "+error.message;$("saveStatus").style.color="#b91c1c";return;}
+ Object.assign(q,patch);$("saveStatus").textContent="Saved ✓";$("saveStatus").style.color="#047857";
+ $("jump").options[index].textContent=(index+1)+". "+q.year+" · Q"+q.question_number+(fullyReviewed(q)?" ✓":"");
+ updateStats();renderButtonsOnly();
+}
+function renderButtonsOnly(){document.querySelectorAll("[data-field]").forEach(b=>{const v=questions[index][b.dataset.field+"_ok"];b.classList.toggle("selected",v!==null&&v!==undefined&&String(v)===b.dataset.value);});}
+document.querySelectorAll("[data-field]").forEach(b=>b.addEventListener("click",()=>{const field=b.dataset.field+"_ok",value=b.dataset.value==="true";saveCurrent({[field]:value,review_notes:$("notes").value});}));
+$("saveNotes").addEventListener("click",()=>saveCurrent({review_notes:$("notes").value}));
+$("prev").addEventListener("click",()=>{if(index>0){index--;render();}});
+$("next").addEventListener("click",()=>{if(index<questions.length-1){index++;render();}});
+$("jump").addEventListener("change",()=>{index=Number($("jump").value)||0;render();});
+function nextUnchecked(){const i=questions.findIndex(q=>!fullyReviewed(q));if(i<0){$("saveStatus").textContent="All questions fully reviewed ✓";return;}index=i;render();}
+$("resumeBtn").addEventListener("click",nextUnchecked);$("nextUnchecked").addEventListener("click",nextUnchecked);
+$("export").addEventListener("click",()=>{const headers=["id","year","question_number","subject","question_text","option_a","option_b","option_c","option_d","correct_option","explanation","stem_ok","explanation_ok","review_notes","verification_status"];const quote=v=>'"'+String(v??"").replace(/"/g,'""')+'"';const csv=[headers.join(","),...questions.map(q=>headers.map(h=>quote(q[h])).join(","))].join("\r\n");const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="CORTEX_800_question_review.csv";a.click();URL.revokeObjectURL(a.href);});
+load();
+</script>
+</body></html>
