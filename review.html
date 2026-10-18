@@ -53,12 +53,11 @@ h2{font-size:19px;margin:0 0 12px}.qtext{font-size:20px;line-height:1.5;font-wei
  <section class="card"><div class="row" style="justify-content:space-between"><button class="secondary" id="prev">← Previous</button><button class="primary" id="next">Next question →</button></div><div class="row" style="margin-top:10px"><button class="secondary" id="nextUnchecked">Next not fully reviewed ⤵</button><button class="secondary" id="export">Export review CSV</button></div><p class="muted" style="font-size:12px;margin-bottom:0">Review order: year ascending, then question number ascending. Shared link ke through aap aur friend dono ka progress same record mein save hota hai. CSV export backup ke liye hai.</p></section>
 </section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://mtqmccfakojeruntimbi.supabase.co";
 const SUPABASE_KEY="sb_publishable_U4ObHHggF40KVkkOCISA7A__4sBRD6p";
 const TOKEN=new URLSearchParams(location.search).get("token");
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+async function rpc(name,args){const response=await fetch(SUPABASE_URL+"/rest/v1/rpc/"+name,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY},body:JSON.stringify(args)});let payload;try{payload=await response.json()}catch{payload={message:"Supabase returned a non-JSON response"}}if(!response.ok)throw new Error(payload.message||payload.error||("HTTP "+response.status));return payload;}
 let questions=[], index=0, busy=false;
 const PILOT_BATCH_SIZE=50;
 const $=id=>document.getElementById(id);
@@ -84,8 +83,7 @@ function render(){
 }
 async function load(){
  if(!TOKEN){$("loading").textContent="This review link is missing its access token. Please use the complete shared link.";return;}
- const {data,error}=await db.rpc("get_shared_question_review",{p_token:TOKEN});
- if(error){$("loading").textContent="Could not load review: "+error.message;return;}
+ let data;try{data=await rpc("get_shared_question_review",{p_token:TOKEN});}catch(error){$("loading").textContent="Could not load review: "+error.message+" — check internet connection and reopen this link.";return;}
  questions=data.questions||[];
  if(!questions.length){$("loading").textContent="No questions found for this review link.";return;}
  questions.sort((a,b)=>Number(a.year)-Number(b.year)||Number(a.question_number)-Number(b.question_number)||String(a.id).localeCompare(String(b.id)));
@@ -96,7 +94,7 @@ async function load(){
 async function saveCurrent(patch){
  if(busy)return;const q=questions[index];busy=true;$("saveStatus").textContent="Saving…";
  const updated={...q,...patch};
- const {error}=await db.rpc("save_shared_question_review",{p_token:TOKEN,p_question_id:q.id,p_stem_ok:updated.stem_ok??null,p_explanation_ok:updated.explanation_ok??null,p_review_notes:updated.review_notes||""});
+ let error=null;try{await rpc("save_shared_question_review",{p_token:TOKEN,p_question_id:q.id,p_stem_ok:updated.stem_ok??null,p_explanation_ok:updated.explanation_ok??null,p_review_notes:updated.review_notes||""});}catch(e){error=e;}
  busy=false;
  if(error){$("saveStatus").textContent="Save failed: "+error.message;$("saveStatus").style.color="#b91c1c";return;}
  Object.assign(q,patch);$("saveStatus").textContent="Saved ✓";$("saveStatus").style.color="#047857";
