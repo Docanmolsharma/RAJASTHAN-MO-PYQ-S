@@ -114,7 +114,7 @@ async def create_job(
                 rows, candidate, ocr_error = [], None, str(exc)
             except Exception as exc:
                 rows, candidate, ocr_error = [], None, f"OCR failed: {type(exc).__name__}: {exc}"
-            saved = save_capture(job_id=job_id, source_name=source_name, source_app=source_app,
+            saved = save_capture(user_id=user["user_id"], job_id=job_id, source_name=source_name, source_app=source_app,
                 sha256=digest, original_path=str(original_path), preview_path=str(preview_path),
                 raw_ocr=rows, candidate=candidate)
             record = {
@@ -176,7 +176,7 @@ async def get_preview(job_id: str, digest: str, user: dict[str, Any] = Depends(r
 def get_module_questions(source_app: str | None = None, outcome: str | None = None, user: dict[str, Any] = Depends(require_cortex_session)):
     if source_app and source_app not in SOURCE_APPS:
         raise HTTPException(400, "Unknown source_app")
-    return list_questions(source_app=source_app, outcome=outcome)
+    return list_questions(user_id=user["user_id"], source_app=source_app, outcome=outcome)
 
 @app.get("/api/attempts")
 def get_attempt_history(source_app: str | None = None, outcome: str | None = None, user: dict[str, Any] = Depends(require_cortex_session)):
@@ -184,12 +184,12 @@ def get_attempt_history(source_app: str | None = None, outcome: str | None = Non
         raise HTTPException(400, "Unknown source_app")
     if outcome and outcome not in {"correct","incorrect","unattempted","unknown"}:
         raise HTTPException(400, "Unknown outcome")
-    return list_attempts(source_app=source_app, outcome=outcome)
+    return list_attempts(user_id=user["user_id"], source_app=source_app, outcome=outcome)
 
 @app.patch("/api/questions/{question_id}")
 def patch_module_question(question_id: str, payload: dict[str, Any], user: dict[str, Any] = Depends(require_cortex_session)):
     try:
-        found = update_question(question_id, payload)
+        found = update_question(question_id, user["user_id"], payload)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     if not found:
@@ -199,7 +199,7 @@ def patch_module_question(question_id: str, payload: dict[str, Any], user: dict[
 @app.patch("/api/attempts/{attempt_id}")
 def patch_attempt_history(attempt_id: str, payload: dict[str, Any], user: dict[str, Any] = Depends(require_cortex_session)):
     try:
-        found = update_attempt(attempt_id, payload)
+        found = update_attempt(attempt_id, user["user_id"], payload)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     if not found:
