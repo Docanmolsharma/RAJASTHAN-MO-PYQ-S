@@ -45,7 +45,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     # Keep wrapped D-option lines, but stop before explicit answer/explanation metadata.
     # This avoids the old bug where option D was always truncated to its first OCR line.
     explanation_start = re.compile(
-        r"(?i)^\s*(?:explanation|solution|discussion|correct\s+answer|answer\s+key|reference|why\s+others|pearls?)\s*[:：-]"
+        r"(?i)^\s*(?:explanation|solution|discussion|correct\s+answer|answer\s+key|reference|why\s+others|pearls?)\s*(?:[:：-].*|$)"
     )
     included: list[dict[str, Any]] = []
     for idx, row in enumerate(ordered):
@@ -54,6 +54,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
         # Keep them in all_text for detection, but exclude them from question content.
         if d_index is not None and idx > d_index and (
             explanation_start.search(text) or MISSED_RE.search(text)
+            or re.match(r"(?i)^\s*(?:incorrect|correct)\s+answer\s*$", text)
         ):
             break
         included.append(row)
