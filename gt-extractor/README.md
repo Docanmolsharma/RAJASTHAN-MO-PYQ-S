@@ -21,7 +21,7 @@ Open `capture-studio.html` from the same deployed CORTEX origin so it can reuse 
 
 ## Container build
 
-`backend/Dockerfile` builds a CPU OCR image with PaddleOCR/PaddlePaddle included. Configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in the host environment. Use a persistent mounted disk for `GT_DATA_DIR`; without it, local previews/results/SQLite records may be lost on redeploy. Job ownership metadata is currently held in process memory, so this is still a single-instance prototype rather than a horizontally scalable service.
+`backend/Dockerfile` builds a CPU OCR image with PaddleOCR/PaddlePaddle included. Configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in the host environment. Use a persistent mounted disk for `GT_DATA_DIR`; without it, local previews/results/SQLite records may be lost on redeploy. Job ownership and recent job summaries are recovered from SQLite after process restart. Result JSON and preview files still require a persistent mounted disk; horizontal scaling and cloud object storage are not implemented.
 
 ## API
 - `POST /api/jobs`: multi-image/ZIP capture; form fields `gt_id`, `expected_questions`, `source_app`, `files`.
