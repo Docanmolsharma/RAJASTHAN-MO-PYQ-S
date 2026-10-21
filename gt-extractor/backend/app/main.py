@@ -46,7 +46,7 @@ async def require_cortex_session(authorization: str | None = Header(default=None
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "ocr": "lazy-loaded", "storage": str(DATA),
+    return {"status": "ok", "ocr": "lazy-loaded", "storage": "configured",
             "features": ["module-bank", "attempt-history", "multi-source", "supabase-auth-required"]}
 
 @app.post("/api/jobs")
@@ -135,42 +135,51 @@ async def create_job(
     result_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     jobs[job_id] = {"job_id": job_id, "gt_id": gt_id, "source_app": source_app, "status": "complete",
                     "total": len(staged), "processed": len(image_results), "warnings": len(warnings),
-                    "result_path": str(result_path)}
+                    "result_path": str(result_path), "user_id": user["user_id"]}
     return {"job": jobs[job_id], "result": result}
 
 @app.get("/api/jobs")
-def list_jobs():
-    return list(jobs.values())
+async def list_jobs(user: dict[str, Any] = Depends(require_cortex_session)):
+    return [j for j in jobs.values() if j.get("user_id") == user["user_id"]]
 
 @app.get("/api/jobs/{job_id}")
-def get_job(job_id: str):
+async def get_job(job_id: str, user: dict[str, Any] = Depends(require_cortex_session)):
+    job = jobs.get(job_id)
+    if not job or job.get("user_id") != user["user_id"]:
+        raise HTTPException(404, "Job not found")
     path = RESULTS / f"{job_id}.json"
     if not path.exists():
-        raise HTTPException(404, "Job not found")
+        raise HTTPException(404, "Job result not found")
     return json.loads(path.read_text(encoding="utf-8"))
 
 @app.get("/api/jobs/{job_id}/download")
-def download_result(job_id: str):
+async def download_result(job_id: str, user: dict[str, Any] = Depends(require_cortex_session)):
+    job = jobs.get(job_id)
+    if not job or job.get("user_id") != user["user_id"]:
+        raise HTTPException(404, "Job not found")
     path = RESULTS / f"{job_id}.json"
     if not path.exists():
-        raise HTTPException(404, "Job not found")
+        raise HTTPException(404, "Job result not found")
     return FileResponse(path, media_type="application/json", filename=f"{job_id}_ocr.json")
 
 @app.get("/api/jobs/{job_id}/previews/{digest}")
-def get_preview(job_id: str, digest: str):
+async def get_preview(job_id: str, digest: str, user: dict[str, Any] = Depends(require_cortex_session)):
+    job = jobs.get(job_id)
+    if not job or job.get("user_id") != user["user_id"]:
+        raise HTTPException(404, "Job not found")
     path = PREVIEWS / f"{job_id}_{digest}.jpg"
     if not path.exists():
         raise HTTPException(404, "Preview not found")
     return FileResponse(path, media_type="image/jpeg")
 
 @app.get("/api/questions")
-def get_module_questions(source_app: str | None = None, outcome: str | None = None):
+def get_module_questions(source_app: str | None = None, outcome: str | None = None, user: dict[str, Any] = Depends(require_cortex_session)):
     if source_app and source_app not in SOURCE_APPS:
         raise HTTPException(400, "Unknown source_app")
     return list_questions(source_app=source_app, outcome=outcome)
 
 @app.get("/api/attempts")
-def get_attempt_history(source_app: str | None = None, outcome: str | None = None):
+def get_attempt_history(source_app: str | None = None, outcome: str | None = None, user: dict[str, Any] = Depends(require_cortex_session)):
     if source_app and source_app not in SOURCE_APPS:
         raise HTTPException(400, "Unknown source_app")
     if outcome and outcome not in {"correct","incorrect","unattempted","unknown"}:
@@ -178,7 +187,7 @@ def get_attempt_history(source_app: str | None = None, outcome: str | None = Non
     return list_attempts(source_app=source_app, outcome=outcome)
 
 @app.patch("/api/questions/{question_id}")
-def patch_module_question(question_id: str, payload: dict[str, Any]):
+def patch_module_question(question_id: str, payload: dict[str, Any], user: dict[str, Any] = Depends(require_cortex_session)):
     try:
         found = update_question(question_id, payload)
     except ValueError as exc:
@@ -188,7 +197,7 @@ def patch_module_question(question_id: str, payload: dict[str, Any]):
     return {"updated": True, "question_id": question_id}
 
 @app.patch("/api/attempts/{attempt_id}")
-def patch_attempt_history(attempt_id: str, payload: dict[str, Any]):
+def patch_attempt_history(attempt_id: str, payload: dict[str, Any], user: dict[str, Any] = Depends(require_cortex_session)):
     try:
         found = update_attempt(attempt_id, payload)
     except ValueError as exc:
