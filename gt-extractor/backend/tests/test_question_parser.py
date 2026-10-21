@@ -112,3 +112,23 @@ def test_missed_banner_is_not_appended_to_option_d():
     assert parsed["result"] == "unattempted"
     assert "You missed this question" not in str(parsed)
     assert "private solution text" not in str(parsed)
+
+
+def test_conflicting_green_marker_and_explicit_answer_stays_unknown():
+    rows = [row("Question stem", 1), row("A. alpha", 10),
+            row("B. beta", 20, "green"), row("C. gamma", 30),
+            row("D. delta", 40), row("Correct Answer: C", 60)]
+    parsed = parse_question_regions(rows)
+    assert parsed["correct_answer"] is None
+    assert parsed["result"] == "unknown"
+    assert parsed["warnings"]
+
+
+def test_multiple_green_markers_stay_unknown():
+    rows = [row("Question stem", 1), row("A. alpha", 10, "green"),
+            row("B. beta", 20), row("C. gamma", 30, "green"),
+            row("D. delta", 40)]
+    parsed = parse_question_regions(rows)
+    assert parsed["correct_answer"] is None
+    assert parsed["result"] == "unknown"
+    assert any("multiple option markers" in warning for warning in parsed["warnings"])
