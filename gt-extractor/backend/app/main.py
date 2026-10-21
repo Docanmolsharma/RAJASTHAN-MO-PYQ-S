@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, JSONResponse
 import httpx
 from .services.archive_service import safe_zip_images, SUPPORTED
 from .services.image_service import normalize_image
-from .services.ocr_service import RapidOCRService, OCRUnavailable
+from .services.ocr_service import TesseractOCRService, OCRUnavailable
 from .services.question_parser import parse_question_regions
 from .services.data_store import init_db, save_capture, list_questions, list_attempts, update_question, update_attempt, user_owns_job, list_jobs_for_user, save_job_result, get_job_result
 
@@ -28,7 +28,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
-ocr = RapidOCRService()
+ocr = TesseractOCRService()
 jobs: dict[str, dict[str, Any]] = {}
 SOURCE_APPS = {"PrepLadder","Marrow","Cerebellum","Book","Other"}
 
@@ -76,7 +76,7 @@ def health():
     import importlib.util
 
     auth_configured = bool(os.getenv("SUPABASE_URL", "").strip() and os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip())
-    ocr_installed = importlib.util.find_spec("rapidocr_onnxruntime") is not None
+    ocr_installed = importlib.util.find_spec("pytesseract") is not None and __import__("shutil").which("tesseract") is not None
     data_writable = DATA.exists() and os.access(DATA, os.W_OK)
     return {
         "status": "ok" if data_writable else "degraded",
