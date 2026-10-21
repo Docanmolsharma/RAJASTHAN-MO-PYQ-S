@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw
 
-from app.services.ocr_service import PaddleOCRService
+from app.services.ocr_service import RapidOCRService
 
 
 def make_badge(color):
