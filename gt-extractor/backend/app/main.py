@@ -76,7 +76,7 @@ def health():
     import importlib.util
 
     auth_configured = bool(os.getenv("SUPABASE_URL", "").strip() and os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip())
-    ocr_installed = importlib.util.find_spec("paddleocr") is not None
+    ocr_installed = importlib.util.find_spec("rapidocr_onnxruntime") is not None
     data_writable = DATA.exists() and os.access(DATA, os.W_OK)
     return {
         "status": "ok" if data_writable else "degraded",
