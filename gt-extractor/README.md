@@ -23,6 +23,10 @@ Open `capture-studio.html` from the same deployed CORTEX origin so it can reuse 
 
 `backend/Dockerfile` builds a CPU OCR image with PaddleOCR/PaddlePaddle included. Configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in the host environment. Use a persistent mounted disk for `GT_DATA_DIR`; without it, local previews/results/SQLite records may be lost on redeploy. Job ownership, recent job summaries, and complete batch-result JSON are persisted in SQLite and can be recovered after process restart. Local preview/original processing files still require a persistent mounted disk for preview endpoints; horizontal scaling and durable multi-instance job processing are not implemented.
 
+## Upload and archive safety limits
+
+The API reads multipart uploads in 1 MiB chunks and rejects the request once the aggregate upload limit is crossed. Defaults can be tuned with `GT_MAX_UPLOAD_BYTES` (512 MiB), `GT_MAX_FILES` (500 images), `GT_MAX_ARCHIVE_BYTES` (2 GiB compressed ZIP), `GT_MAX_MEMBER_BYTES` (40 MiB per image), and `GT_MAX_TOTAL_EXTRACTED_BYTES` (256 MiB across supported images extracted from one ZIP). ZIP limits protect against archives whose expanded contents are much larger than their uploaded size. Set limits based on the memory and disk capacity of the deployment; increasing them does not guarantee the host can process a batch safely.
+
 ## API
 - `POST /api/jobs`: multi-image/ZIP capture; form fields `gt_id`, `expected_questions`, `source_app`, `files`.
 - `GET /api/questions?source_app=PrepLadder&outcome=incorrect`: module bank with latest attempt summary.
