@@ -72,8 +72,20 @@ async def _read_upload_bounded(upload: UploadFile, total_bytes: int, max_bytes: 
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "ocr": "lazy-loaded", "storage": "configured",
-            "features": ["module-bank", "attempt-history", "multi-source", "supabase-auth-required"]}
+    """Deployment probe: report configuration honestly without loading the OCR model."""
+    import importlib.util
+
+    auth_configured = bool(os.getenv("SUPABASE_URL", "").strip() and os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip())
+    ocr_installed = importlib.util.find_spec("paddleocr") is not None
+    data_writable = DATA.exists() and os.access(DATA, os.W_OK)
+    return {
+        "status": "ok" if data_writable else "degraded",
+        "auth_configured": auth_configured,
+        "ocr_runtime_installed": ocr_installed,
+        "data_dir_writable": data_writable,
+        "persistent_disk_required": True,
+        "features": ["module-bank", "attempt-history", "multi-source", "supabase-auth-required"],
+    }
 
 @app.post("/api/jobs")
 async def create_job(
