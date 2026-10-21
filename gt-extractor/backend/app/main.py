@@ -80,13 +80,23 @@ async def create_job(
     warnings: list[str] = []
     staged: list[tuple[str, bytes]] = []
     total_bytes = 0
-    max_upload = int(os.getenv("GT_MAX_UPLOAD_BYTES", str(1024**3)))
+    max_upload = int(os.getenv("GT_MAX_UPLOAD_BYTES", str(512 * 1024**2)))
+    # Read in bounded chunks; reject the aggregate request before materializing
+    # an oversized upload fully in memory.
     for upload in files:
         name = Path(upload.filename or "upload").name
-        data = await upload.read()
-        total_bytes += len(data)
-        if total_bytes > max_upload:
-            raise HTTPException(413, f"Total upload exceeds configured limit ({max_upload} bytes)")
+        chunks: list[bytes] = []
+        while True:
+            chunk = await upload.read(1024 * 1024)
+            if not chunk:
+                break
+            total_bytes += len(chunk)
+            if total_bytes > max_upload:
+                await upload.close()
+                raise HTTPException(413, f"Total upload exceeds configured limit ({max_upload} bytes)")
+            chunks.append(chunk)
+        await upload.close()
+        data = b"".join(chunks)
         suffix = Path(name).suffix.lower()
         if suffix == ".zip":
             try:
