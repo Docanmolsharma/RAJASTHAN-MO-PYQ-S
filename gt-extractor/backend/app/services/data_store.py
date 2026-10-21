@@ -160,3 +160,35 @@ def update_attempt(attempt_id: str, user_id: str, payload: dict[str, Any]) -> bo
         cur = db.execute("""UPDATE attempt_history SET selected_answer=?,correct_answer=?,outcome=?,attempt_label=?
                             WHERE id=? AND user_id=?""",(selected,correct,outcome,payload.get("attempt_label"),attempt_id,user_id))
         return cur.rowcount > 0
+
+
+def user_owns_job(user_id: str, job_id: str) -> bool:
+    """Check durable ownership from SQLite, not the process-local jobs cache."""
+    init_db()
+    with connect() as db:
+        row = db.execute(
+            "SELECT 1 FROM capture_items WHERE user_id=? AND job_id=? LIMIT 1",
+            (user_id, job_id),
+        ).fetchone()
+    return row is not None
+
+
+def list_jobs_for_user(user_id: str) -> list[dict[str, Any]]:
+    """Rebuild recent job summaries from durable capture rows after process restart."""
+    init_db()
+    with connect() as db:
+        rows = db.execute("""
+            SELECT job_id, source_app, COUNT(*) AS processed,
+                   MIN(created_at) AS created_at,
+                   SUM(CASE WHEN review_status='pending' THEN 1 ELSE 0 END) AS pending_review
+            FROM capture_items
+            WHERE user_id=?
+            GROUP BY job_id, source_app
+            ORDER BY MIN(created_at) DESC
+        """, (user_id,)).fetchall()
+    return [
+        {"job_id": row["job_id"], "source_app": row["source_app"],
+         "processed": row["processed"], "created_at": row["created_at"],
+         "pending_review": row["pending_review"], "status": "stored"}
+        for row in rows
+    ]
