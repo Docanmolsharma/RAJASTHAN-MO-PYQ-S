@@ -59,7 +59,10 @@ class PaddleOCRService:
         return None
 
     def extract(self, image) -> list[dict[str, Any]]:
-        result = self._get_engine().ocr(image, cls=True)
+        # PaddleOCR 2.x expects a BGR numpy array, not a PIL Image.
+        rgb = np.asarray(image.convert("RGB"))
+        bgr = np.ascontiguousarray(rgb[:, :, ::-1])
+        result = self._get_engine().ocr(bgr, cls=True)
         rows: list[dict[str, Any]] = []
         for page in result or []:
             for item in page or []:
