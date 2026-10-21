@@ -59,13 +59,19 @@ class TesseractOCRService:
         # Tesseract is a separate native process and uses substantially less RAM
         # than loading a deep-learning OCR model into the 512 MB Render instance.
         rgb = np.asarray(image.convert("RGB"))
-        h, w = rgb.shape[:2]
+        original_h, original_w = rgb.shape[:2]
+        # On tall phone/tablet screenshots the top 5.5% is the OS status bar.
+        # Exclude it before OCR so time/date/battery glyphs cannot contaminate
+        # the first medical stem line. Keep coordinates mapped to the original image.
+        crop_top = int(original_h * 0.055) if original_h >= original_w * 1.15 else 0
+        working = rgb[crop_top:, :, :] if crop_top else rgb
+        h, w = working.shape[:2]
         scale = min(1.0, 1800.0 / max(h, w))
         if scale < 1.0:
             import cv2
-            rgb = cv2.resize(rgb, (max(1, int(w*scale)), max(1, int(h*scale))), interpolation=cv2.INTER_AREA)
+            working = cv2.resize(working, (max(1, int(w*scale)), max(1, int(h*scale))), interpolation=cv2.INTER_AREA)
         data = pytesseract.image_to_data(
-            rgb, lang="eng", config="--oem 1 --psm 6",
+            working, lang="eng", config="--oem 1 --psm 6",
             output_type=pytesseract.Output.DICT
         )
         rows: list[dict[str, Any]] = []
@@ -80,9 +86,12 @@ class TesseractOCRService:
                 confidence = None
             x, y = int(data["left"][i]), int(data["top"][i])
             bw, bh = int(data["width"][i]), int(data["height"][i])
-            box = [[x, y], [x+bw, y], [x+bw, y+bh], [x, y+bh]]
-            row = {"text": text, "bbox": [[float(a), float(b)] for a,b in box], "confidence": confidence, "block_num": int(data["block_num"][i]), "par_num": int(data["par_num"][i]), "line_num": int(data["line_num"][i])}
-            marker = self._option_marker(image, text, [[a/scale, b/scale] for a,b in box])
+            # Map OCR boxes back to the full-resolution source image.
+            x0, y0 = x / scale, y / scale + crop_top
+            x1, y1 = (x + bw) / scale, (y + bh) / scale + crop_top
+            box = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+            row = {"text": text, "bbox": [[float(a*scale), float((b-crop_top)*scale)] for a,b in box], "confidence": confidence, "block_num": int(data["block_num"][i]), "par_num": int(data["par_num"][i]), "line_num": int(data["line_num"][i])}
+            marker = self._option_marker(image, text, box)
             if marker:
                 row["option_marker"] = marker
             rows.append(row)
