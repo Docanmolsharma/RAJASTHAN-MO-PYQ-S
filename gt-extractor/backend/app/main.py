@@ -257,4 +257,4 @@ def capture_studio():
     page = Path(__file__).resolve().parents[2] / "capture-studio.html"
     if not page.is_file():
         raise HTTPException(404, "Capture Studio page is not present in this deployment")
-    return FileResponse(page, media_type="text/html", headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0", "Pragma": "no-cache"})
+    return FileResponse(page, media_type="text/html", headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0", "Pragma": "no-cache", "X-CORTEX-Capture-Studio": "safari-fix-f1aa1a1"})
