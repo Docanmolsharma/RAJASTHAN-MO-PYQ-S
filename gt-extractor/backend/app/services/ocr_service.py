@@ -6,7 +6,7 @@ import numpy as np
 class OCRUnavailable(RuntimeError):
     pass
 
-class PaddleOCRService:
+class RapidOCRService:
     """Lazy OCR wrapper preserving text, confidence, polygon boxes and option badge colours."""
     def __init__(self) -> None:
         self._engine = None
@@ -14,10 +14,10 @@ class PaddleOCRService:
     def _get_engine(self):
         if self._engine is None:
             try:
-                from paddleocr import PaddleOCR
+                from rapidocr_onnxruntime import RapidOCR
             except ImportError as exc:
-                raise OCRUnavailable("PaddleOCR is not installed. Install with: pip install paddleocr paddlepaddle") from exc
-            self._engine = PaddleOCR(use_angle_cls=True, lang="en", show_log=False)
+                raise OCRUnavailable("RapidOCR is not installed. Install with: pip install rapidocr-onnxruntime") from exc
+            self._engine = RapidOCR()
         return self._engine
 
     @staticmethod
@@ -59,24 +59,22 @@ class PaddleOCRService:
         return None
 
     def extract(self, image) -> list[dict[str, Any]]:
-        # PaddleOCR 2.x expects a BGR numpy array, not a PIL Image.
+        # RapidOCR/ONNX Runtime has a smaller runtime footprint than PaddlePaddle.
         rgb = np.asarray(image.convert("RGB"))
-        bgr = np.ascontiguousarray(rgb[:, :, ::-1])
-        result = self._get_engine().ocr(bgr, cls=True)
+        result, _elapsed = self._get_engine()(rgb)
         rows: list[dict[str, Any]] = []
-        for page in result or []:
-            for item in page or []:
-                if not item or len(item) < 2:
-                    continue
-                box, payload = item[0], item[1]
-                text = str(payload[0]) if payload else ""
-                row = {
-                    "text": text,
-                    "bbox": [[float(p[0]), float(p[1])] for p in box],
-                    "confidence": float(payload[1]) if payload and len(payload) > 1 else None,
-                }
-                marker = self._option_marker(image, text, box)
-                if marker:
-                    row["option_marker"] = marker
-                rows.append(row)
+        for item in result or []:
+            if not item or len(item) < 3:
+                continue
+            box, text_value, confidence = item[0], item[1], item[2]
+            text = str(text_value or "")
+            row = {
+                "text": text,
+                "bbox": [[float(p[0]), float(p[1])] for p in box],
+                "confidence": float(confidence) if confidence is not None else None,
+            }
+            marker = self._option_marker(image, text, box)
+            if marker:
+                row["option_marker"] = marker
+            rows.append(row)
         return rows
