@@ -76,14 +76,32 @@ def health():
     import importlib.util
 
     auth_configured = bool(os.getenv("SUPABASE_URL", "").strip() and os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip())
-    ocr_installed = importlib.util.find_spec("pytesseract") is not None and __import__("shutil").which("tesseract") is not None
+    tesseract_path = __import__("shutil").which("tesseract")
+    pytesseract_installed = importlib.util.find_spec("pytesseract") is not None
+    ocr_installed = bool(pytesseract_installed and tesseract_path)
+    tesseract_version = None
+    english_language_available = False
+    if ocr_installed:
+        try:
+            import pytesseract
+            tesseract_version = str(pytesseract.get_tesseract_version())
+            english_language_available = "eng" in pytesseract.get_languages(config="")
+        except Exception:
+            # Keep health endpoint available; detailed readiness flags expose the failure.
+            pass
     data_writable = DATA.exists() and os.access(DATA, os.W_OK)
     return {
         "status": "ok" if data_writable else "degraded",
         "auth_configured": auth_configured,
         "ocr_runtime_installed": ocr_installed,
+        "pytesseract_installed": pytesseract_installed,
+        "tesseract_binary_found": bool(tesseract_path),
+        "tesseract_version": tesseract_version,
+        "english_language_available": english_language_available,
+        "ocr_ready": bool(ocr_installed and english_language_available),
         "data_dir_writable": data_writable,
-        "persistent_disk_required": True,
+        "persistent_disk_required": False,
+        "storage_note": "Local job metadata is ephemeral on Free Render; saved question records/images should live in Supabase.",
         "features": ["module-bank", "attempt-history", "multi-source", "supabase-auth-required"],
     }
 
