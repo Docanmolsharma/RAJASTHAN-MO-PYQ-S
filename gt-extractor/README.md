@@ -17,7 +17,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Open `capture-studio.html` from the same deployed CORTEX origin so it can reuse the signed-in Supabase session. Configure the deployed OCR backend URL in the page. The backend validates the bearer token against Supabase Auth on every non-health API route, and scopes in-memory job access plus local SQLite records to the authenticated user. The older `frontend/index.html` is a developer preview; production capture should use `capture-studio.html`. For iPhone/iPad use, the browser must be able to reach the backend; mobile Safari itself is not expected to run large OCR batches.
+Open `capture-studio.html` from the same deployed CORTEX origin so it can reuse the signed-in Supabase session. Configure the deployed OCR backend URL in the page. Set `GT_ALLOWED_ORIGINS` on the backend to a comma-separated list of exact CORTEX frontend origins (scheme + host, no path); wildcard CORS is disabled. The backend validates the bearer token against Supabase Auth on every non-health API route, and scopes in-memory job access plus local SQLite records to the authenticated user. The older `frontend/index.html` is a developer preview; production capture should use `capture-studio.html`. For iPhone/iPad use, the browser must be able to reach the backend; mobile Safari itself is not expected to run large OCR batches.
 
 ## Container build
 
