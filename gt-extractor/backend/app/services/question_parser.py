@@ -3,9 +3,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
-OPTION_RE = re.compile(r"^\\s*([A-D])\\s*[).:]\\s*(.*)$", re.I)
-ANSWER_RE = re.compile(r"(?i)\\bcorrect\\s+answer\\s*[:：-]?\\s*\\(?\\s*([A-D])\\s*\\)?")
-MISSED_RE = re.compile(r"(?i)you\\s+missed\\s+this\\s+question")
+OPTION_RE = re.compile(r"^\s*([A-D])\s*[).:]\s*(.*)$", re.I)
+ANSWER_RE = re.compile(r"(?i)\bcorrect\s+answer\s*[:：-]?\s*\(?\s*([A-D])\s*\)?")
+MISSED_RE = re.compile(r"(?i)you\s+missed\s+this\s+question")
 
 
 def _row_y(row: dict[str, Any]) -> float:
@@ -32,7 +32,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     """
     ordered = sorted(ocr_rows, key=lambda r: (_row_y(r), _row_x(r)))
     warnings: list[str] = []
-    all_text = "\\n".join(str(r.get("text", "")).strip() for r in ordered if r.get("text"))
+    all_text = "\n".join(str(r.get("text", "")).strip() for r in ordered if r.get("text"))
     missed = bool(MISSED_RE.search(all_text))
     option_starts: dict[str, int] = {}
     for i, row in enumerate(ordered):
