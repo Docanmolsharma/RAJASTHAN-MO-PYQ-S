@@ -36,6 +36,14 @@ def init_db() -> None:
           selected_answer TEXT, correct_answer TEXT, outcome TEXT NOT NULL DEFAULT 'unknown',
           evidence_json TEXT NOT NULL DEFAULT '{}', attempt_label TEXT, captured_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
+        CREATE TABLE IF NOT EXISTS job_runs (
+          job_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, gt_id TEXT NOT NULL,
+          source_app TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'complete',
+          expected_questions INTEGER NOT NULL DEFAULT 0, total_images_received INTEGER NOT NULL DEFAULT 0,
+          unique_images_processed INTEGER NOT NULL DEFAULT 0, warnings_json TEXT NOT NULL DEFAULT '[]',
+          result_json TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_job_runs_user_created ON job_runs(user_id, created_at);
         """)
         # Additive migration for databases created by earlier prototype builds.
         for table in ("capture_items", "module_questions", "attempt_history"):
@@ -193,3 +201,32 @@ def list_jobs_for_user(user_id: str) -> list[dict[str, Any]]:
          "pending_review": row["pending_review"], "status": "stored"}
         for row in rows
     ]
+
+
+def save_job_result(*, user_id: str, result: dict[str, Any]) -> None:
+    """Persist a complete batch result so API downloads survive process restarts."""
+    init_db()
+    with connect() as db:
+        db.execute("""INSERT INTO job_runs
+          (job_id,user_id,gt_id,source_app,status,expected_questions,total_images_received,
+           unique_images_processed,warnings_json,result_json)
+          VALUES (?,?,?,?,?,?,?,?,?,?)
+          ON CONFLICT(job_id) DO UPDATE SET
+            user_id=excluded.user_id,gt_id=excluded.gt_id,source_app=excluded.source_app,
+            status=excluded.status,expected_questions=excluded.expected_questions,
+            total_images_received=excluded.total_images_received,
+            unique_images_processed=excluded.unique_images_processed,
+            warnings_json=excluded.warnings_json,result_json=excluded.result_json""",
+          (str(result["job_id"]),user_id,str(result.get("gt_id") or ""),
+           str(result.get("source_app") or "Other"),"complete",
+           int(result.get("expected_questions") or 0),int(result.get("total_images_received") or 0),
+           int(result.get("unique_images_processed") or 0),
+           json.dumps(result.get("warnings") or [],ensure_ascii=False),
+           json.dumps(result,ensure_ascii=False)))
+
+def get_job_result(*, user_id: str, job_id: str) -> dict[str, Any] | None:
+    """Fetch a batch result only for its owner."""
+    init_db()
+    with connect() as db:
+        row=db.execute("SELECT result_json FROM job_runs WHERE user_id=? AND job_id=?",(user_id,job_id)).fetchone()
+    return json.loads(row["result_json"]) if row else None
