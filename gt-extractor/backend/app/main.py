@@ -18,7 +18,16 @@ for folder in (UPLOADS, PREVIEWS, RESULTS):
     folder.mkdir(parents=True, exist_ok=True)
 init_db()
 app = FastAPI(title="CORTEX GT Extractor", version="0.2.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+# Production deployments should set GT_ALLOWED_ORIGINS to a comma-separated allowlist.
+# Do not use wildcard origins for a service that accepts authenticated uploads.
+_allowed_origins = [origin.strip().rstrip("/") for origin in os.getenv("GT_ALLOWED_ORIGINS", "").split(",") if origin.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 ocr = PaddleOCRService()
 jobs: dict[str, dict[str, Any]] = {}
 SOURCE_APPS = {"PrepLadder","Marrow","Cerebellum","Book","Other"}
