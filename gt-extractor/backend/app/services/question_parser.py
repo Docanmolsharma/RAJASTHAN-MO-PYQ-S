@@ -23,6 +23,37 @@ def _marker(row: dict[str, Any]) -> str | None:
     return aliases.get(value)
 
 
+def _logical_lines(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Combine Tesseract word-level tokens into visual lines before parsing."""
+    grouped: dict[tuple[int, int, int], list[dict[str, Any]]] = {}
+    # Legacy/test rows without Tesseract line ids remain separate input lines.
+    for index, row in enumerate(rows):
+        key = (int(row.get("block_num", -1)), int(row.get("par_num", -1)), int(row.get("line_num", index)))
+        grouped.setdefault(key, []).append(row)
+    result: list[dict[str, Any]] = []
+    for tokens in grouped.values():
+        tokens = sorted(tokens, key=_row_x)
+        if len(tokens) == 1:
+            result.append(tokens[0])
+            continue
+        points = [p for token in tokens for p in token.get("bbox", [])]
+        merged = {
+            "text": " ".join(str(t.get("text", "")).strip() for t in tokens if t.get("text")).strip(),
+            "bbox": points,
+            "confidence": sum(float(t.get("confidence") or 0) for t in tokens) / max(1, len(tokens)),
+            "block_num": tokens[0].get("block_num", -1),
+            "par_num": tokens[0].get("par_num", -1),
+            "line_num": tokens[0].get("line_num", -1),
+        }
+        markers = [str(t.get("option_marker", "")).lower() for t in tokens]
+        if "green" in markers:
+            merged["option_marker"] = "green"
+        elif "red" in markers:
+            merged["option_marker"] = "red"
+        result.append(merged)
+    return result
+
+
 def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Parse question text conservatively and use explicit review-screen signals.
 
@@ -30,7 +61,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     image-colour detector has classified the option badge. Plain OCR text alone
     is not treated as proof of a user's selected option.
     """
-    ordered = sorted(ocr_rows, key=lambda r: (_row_y(r), _row_x(r)))
+    ordered = sorted(_logical_lines(ocr_rows), key=lambda r: (_row_y(r), _row_x(r)))
     warnings: list[str] = []
     all_text = "\n".join(str(r.get("text", "")).strip() for r in ordered if r.get("text"))
     missed = bool(MISSED_RE.search(all_text))
