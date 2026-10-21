@@ -17,7 +17,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-The Docker image installs PaddleOCR/PaddlePaddle for CPU OCR. Configure `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `GT_ALLOWED_ORIGINS` in the host environment. `GT_ALLOWED_ORIGINS` is a comma-separated allowlist of exact frontend origins (scheme + host, no path); wildcard CORS is not enabled. Non-health API routes validate the signed-in user's bearer token with Supabase Auth.
+The Docker image installs PaddleOCR/PaddlePaddle for CPU OCR. For Render's native Python runtime, use `requirements-render.txt` (not the lightweight test `requirements.txt`) as the build dependency file: set Build Command to `pip install -r requirements-render.txt`, keep Root Directory `gt-extractor/backend`, and pin Python to 3.11.9 via `.python-version`. This installs the PaddleOCR 2.10/PaddlePaddle 2.6 CPU runtime. OCR model initialization/inference must still be tested after deployment; the free 512 MB instance may be too memory-constrained for real OCR workloads. Configure `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `GT_ALLOWED_ORIGINS` in the host environment. `GT_ALLOWED_ORIGINS` is a comma-separated allowlist of exact frontend origins (scheme + host, no path); wildcard CORS is not enabled. Non-health API routes validate the signed-in user's bearer token with Supabase Auth.
 
 Open `capture-studio.html` from the same deployed CORTEX origin to reuse the signed-in Supabase session. The browser upload currently supports multiple image files; the backend API also supports ZIP archives. The older `frontend/index.html` is a developer preview, not the authenticated capture interface.
 
