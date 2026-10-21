@@ -9,26 +9,37 @@ from .services.archive_service import safe_zip_images, SUPPORTED
 from .services.image_service import normalize_image
 from .services.ocr_service import PaddleOCRService, OCRUnavailable
 from .services.question_parser import parse_question_regions
+from .services.data_store import init_db, save_capture, list_questions, list_attempts, update_question, update_attempt
 
 DATA = Path(os.getenv("GT_DATA_DIR", "data")).resolve()
 UPLOADS, PREVIEWS, RESULTS = DATA / "uploads", DATA / "previews", DATA / "results"
 for folder in (UPLOADS, PREVIEWS, RESULTS):
     folder.mkdir(parents=True, exist_ok=True)
-app = FastAPI(title="CORTEX GT Extractor", version="0.1.0")
+init_db()
+app = FastAPI(title="CORTEX GT Extractor", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 ocr = PaddleOCRService()
 jobs: dict[str, dict[str, Any]] = {}
+SOURCE_APPS = {"PrepLadder","Marrow","Cerebellum","Book","Other"}
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "ocr": "lazy-loaded", "storage": str(DATA)}
+    return {"status": "ok", "ocr": "lazy-loaded", "storage": str(DATA),
+            "features": ["module-bank", "attempt-history", "multi-source"]}
 
 @app.post("/api/jobs")
-async def create_job(gt_id: str = Form(...), expected_questions: int = Form(200), files: list[UploadFile] = File(...)):
+async def create_job(
+    gt_id: str = Form(...),
+    expected_questions: int = Form(200),
+    source_app: str = Form("PrepLadder"),
+    files: list[UploadFile] = File(...)
+):
     if not gt_id.strip():
-        raise HTTPException(400, "GT identifier is required")
+        raise HTTPException(400, "GT/module identifier is required")
     if not 1 <= expected_questions <= 1000:
         raise HTTPException(400, "expected_questions must be between 1 and 1000")
+    if source_app not in SOURCE_APPS:
+        raise HTTPException(400, f"source_app must be one of {sorted(SOURCE_APPS)}")
     if not files:
         raise HTTPException(400, "Select at least one image or ZIP")
     job_id = str(uuid.uuid4())
@@ -80,24 +91,28 @@ async def create_job(gt_id: str = Form(...), expected_questions: int = Form(200)
                 rows, candidate, ocr_error = [], None, str(exc)
             except Exception as exc:
                 rows, candidate, ocr_error = [], None, f"OCR failed: {type(exc).__name__}: {exc}"
+            saved = save_capture(job_id=job_id, source_name=source_name, source_app=source_app,
+                sha256=digest, original_path=str(original_path), preview_path=str(preview_path),
+                raw_ocr=rows, candidate=candidate)
             record = {
                 "source_images": [source_name], "sha256": digest, "original_path": str(original_path),
                 "preview_url": f"/api/jobs/{job_id}/previews/{digest}", "width": image.width, "height": image.height,
-                "ocr": rows, "question_candidate": candidate, "ocr_error": ocr_error
+                "ocr": rows, "question_candidate": candidate, "ocr_error": ocr_error, "saved_records": saved
             }
             seen[digest] = record
             image_results.append(record)
         except ValueError as exc:
             warnings.append(f"{source_name}: {exc}")
     result = {
-        "schema_version": "0.1", "job_id": job_id, "gt_id": gt_id, "expected_questions": expected_questions,
-        "total_images_received": len(staged), "unique_images_processed": len(image_results),
-        "warnings": warnings, "images": image_results
+        "schema_version": "0.2", "job_id": job_id, "gt_id": gt_id, "source_app": source_app,
+        "expected_questions": expected_questions, "total_images_received": len(staged),
+        "unique_images_processed": len(image_results), "warnings": warnings, "images": image_results
     }
     result_path = RESULTS / f"{job_id}.json"
     result_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    jobs[job_id] = {"job_id": job_id, "gt_id": gt_id, "status": "complete", "total": len(staged),
-                    "processed": len(image_results), "warnings": len(warnings), "result_path": str(result_path)}
+    jobs[job_id] = {"job_id": job_id, "gt_id": gt_id, "source_app": source_app, "status": "complete",
+                    "total": len(staged), "processed": len(image_results), "warnings": len(warnings),
+                    "result_path": str(result_path)}
     return {"job": jobs[job_id], "result": result}
 
 @app.get("/api/jobs")
@@ -124,3 +139,37 @@ def get_preview(job_id: str, digest: str):
     if not path.exists():
         raise HTTPException(404, "Preview not found")
     return FileResponse(path, media_type="image/jpeg")
+
+@app.get("/api/questions")
+def get_module_questions(source_app: str | None = None, outcome: str | None = None):
+    if source_app and source_app not in SOURCE_APPS:
+        raise HTTPException(400, "Unknown source_app")
+    return list_questions(source_app=source_app, outcome=outcome)
+
+@app.get("/api/attempts")
+def get_attempt_history(source_app: str | None = None, outcome: str | None = None):
+    if source_app and source_app not in SOURCE_APPS:
+        raise HTTPException(400, "Unknown source_app")
+    if outcome and outcome not in {"correct","incorrect","unattempted","unknown"}:
+        raise HTTPException(400, "Unknown outcome")
+    return list_attempts(source_app=source_app, outcome=outcome)
+
+@app.patch("/api/questions/{question_id}")
+def patch_module_question(question_id: str, payload: dict[str, Any]):
+    try:
+        found = update_question(question_id, payload)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if not found:
+        raise HTTPException(404, "Question not found")
+    return {"updated": True, "question_id": question_id}
+
+@app.patch("/api/attempts/{attempt_id}")
+def patch_attempt_history(attempt_id: str, payload: dict[str, Any]):
+    try:
+        found = update_attempt(attempt_id, payload)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if not found:
+        raise HTTPException(404, "Attempt record not found")
+    return {"updated": True, "attempt_id": attempt_id}
