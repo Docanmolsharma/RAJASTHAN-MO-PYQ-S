@@ -11,26 +11,32 @@ QUESTION_COUNTER_RE = re.compile(r"(?i)\bquestion\s*#?\s*\d{1,4}\s+of\s+\d{1,4}\
 TIME_DATE_RE = re.compile(r"(?i)^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*(?:am|pm)?\b.*(?:mon|tue|wed|thu|fri|sat|sun|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|%|question)")
 
 def _clean_screen_chrome(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Remove app chrome without discarding a clinical stem sharing the same OCR line."""
+    """Strip status-bar/counter artifacts while preserving the actual question text."""
     cleaned: list[dict[str, Any]] = []
+    chrome_prefix = re.compile(
+        r"(?i)^\\s*(?:[01]?\\d|2[0-3]):[0-5]\\d\\s*(?:am|pm)?\\s+"
+        r"(?:(?:mon|tue|wed|thu|fri|sat|sun)\\w*\\s+)?"
+        r"(?:\\d{1,2}\\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\w*"
+        r"(?:\\s+\\d{2,4})?\\s*"
+    )
     for row in rows:
         text = str(row.get("text", "")).strip()
         if not text:
             continue
-        # If time/date/battery/question counter are merged with the stem, remove only
-        # the chrome prefix through the counter rather than dropping the whole line.
-        counter = QUESTION_COUNTER_RE.search(text)
-        if counter:
-            text = text[counter.end():]
-        else:
-            # Trim a leading clock/date fragment only when it is clearly screen chrome.
-            text = re.sub(
-                r"(?i)^\\s*(?:[01]?\\d|2[0-3]):[0-5]\\d\\s*(?:am|pm)?\\s+(?:(?:mon|tue|wed|thu|fri|sat|sun)\\w*\\s+)?(?:\\d{1,2}\\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\w*\\s*",
-                " ", text,
-            )
-        text = re.sub(r"\\s+", " ", text).strip(" =@|·{}")
-        if text:
-            cleaned.append({**row, "text": text})
+        # Remove the question counter wherever it occurs.
+        text = QUESTION_COUNTER_RE.sub(" ", text)
+        # Status-bar OCR can be fused with the first clinical line. Strip only its
+        # clock/date prefix; do not discard the remainder of the same line.
+        text = chrome_prefix.sub(" ", text)
+        # Remove standalone battery/time debris left after prefix cleanup.
+        text = re.sub(r"(?i)^\\s*(?:=|@|%|\\|)+\\s*", " ", text)
+        text = re.sub(r"\\s+", " ", text).strip(" =@|·{}%")
+        if not text:
+            continue
+        # Pure status-bar fragments have no meaningful question text.
+        if re.fullmatch(r"(?i)(?:\\d{1,3}%?|[=*@|·\\s]+|(?:question\\s*)?\\d{1,4}\\s*(?:of\\s*\\d{1,4})?)", text):
+            continue
+        cleaned.append({**row, "text": text})
     return cleaned
 
 def _row_y(row: dict[str, Any]) -> float:
