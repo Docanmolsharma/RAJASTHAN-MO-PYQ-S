@@ -73,3 +73,14 @@ def test_job_result_survives_restart_and_is_owner_scoped(tmp_path, monkeypatch):
     assert jobs[0]["job_id"] == "job-persisted"
     assert jobs[0]["processed"] == 2
     assert jobs[0]["status"] == "complete"
+
+
+def test_job_result_without_capture_rows_still_has_owner_boundary(tmp_path, monkeypatch):
+    monkeypatch.setattr(data_store, "DB_PATH", tmp_path / "empty-job.sqlite3")
+    data_store.save_job_result(user_id="user-a", result={
+        "job_id": "job-no-valid-images", "gt_id": "GT2", "source_app": "Book",
+        "expected_questions": 10, "total_images_received": 1,
+        "unique_images_processed": 0, "warnings": ["invalid image"], "images": [],
+    })
+    assert data_store.user_owns_job("user-a", "job-no-valid-images")
+    assert not data_store.user_owns_job("user-b", "job-no-valid-images")
