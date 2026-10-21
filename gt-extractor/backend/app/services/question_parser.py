@@ -7,6 +7,24 @@ OPTION_RE = re.compile(r"^\s*([A-D])(?:\s*[).:]|\s+)\s*(.*)$", re.I)
 ANSWER_RE = re.compile(r"(?im)^[ \t]*correct[ \t]+answer[ \t]*[:：-]?[ \t]*\(?[ \t]*([A-D])\b")
 MISSED_RE = re.compile(r"(?i)you\s+missed\s+this\s+question")
 
+QUESTION_COUNTER_RE = re.compile(r"(?i)\bquestion\s*#?\s*\d{1,4}\s+of\s+\d{1,4}\b")
+TIME_DATE_RE = re.compile(r"(?i)^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*(?:am|pm)?\b.*(?:mon|tue|wed|thu|fri|sat|sun|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|%|question)")
+
+def _clean_screen_chrome(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Remove obvious device/app chrome before parsing question content."""
+    cleaned: list[dict[str, Any]] = []
+    for row in rows:
+        text = str(row.get("text", "")).strip()
+        if not text:
+            continue
+        if TIME_DATE_RE.search(text):
+            continue
+        text = QUESTION_COUNTER_RE.sub(" ", text)
+        text = re.sub(r"\s+", " ", text).strip(" =@|·")
+        if text:
+            cleaned.append({**row, "text": text})
+    return cleaned
+
 
 def _row_y(row: dict[str, Any]) -> float:
     return min((p[1] for p in row.get("bbox", [])), default=0)
