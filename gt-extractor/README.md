@@ -17,7 +17,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Open `frontend/index.html` using a local web server. Configure the backend address in the UI. For iPhone/iPad use, the browser must be able to reach the backend; mobile Safari itself is not expected to run large OCR batches.
+Open `capture-studio.html` from the same deployed CORTEX origin so it can reuse the signed-in Supabase session. Configure the deployed OCR backend URL in the page. The backend validates the bearer token against Supabase Auth and rejects unauthenticated uploads. The older `frontend/index.html` is a developer preview; production capture should use `capture-studio.html`. For iPhone/iPad use, the browser must be able to reach the backend; mobile Safari itself is not expected to run large OCR batches.
 
 ## API
 - `POST /api/jobs`: multi-image/ZIP capture; form fields `gt_id`, `expected_questions`, `source_app`, `files`.
@@ -35,4 +35,4 @@ pytest
 ```
 
 ## Important limitations
-This is an initial prototype, not a validated GT dataset. PaddleOCR is optional and loaded lazily. Explanation exclusion and correct/incorrect color mapping must be calibrated on actual review screenshots. It deliberately does not infer answers from medical knowledge. If visual status cannot be read confidently, the record remains `unknown` pending verification. A real cloud/mobile deployment, authentication, encrypted storage, retention controls, resumable uploads and job persistence are still required before production use.
+This is an initial prototype, not a validated GT dataset. PaddleOCR is optional and loaded lazily. Explanation exclusion and correct/incorrect color mapping must be calibrated on actual review screenshots. It deliberately does not infer answers from medical knowledge. If visual status cannot be read confidently, the record remains `unknown` pending verification. The private Supabase capture tables and owner-based RLS policies are provisioned. OCR previews currently reference the configured backend; durable original-image storage in a private Supabase Storage bucket, verified screenshot colour mapping, resumable uploads, persistent job tracking, and end-to-end tests on real PrepLadder/Marrow/Cerebellum/book examples are still required before production use.
