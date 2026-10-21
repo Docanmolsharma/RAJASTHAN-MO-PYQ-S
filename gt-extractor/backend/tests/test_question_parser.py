@@ -132,3 +132,26 @@ def test_multiple_green_markers_stay_unknown():
     assert parsed["correct_answer"] is None
     assert parsed["result"] == "unknown"
     assert any("multiple option markers" in warning for warning in parsed["warnings"])
+
+
+def test_bare_solution_heading_is_not_appended_to_option_d():
+    rows = [
+        row("Question stem", 1), row("A. alpha", 10), row("B. beta", 20),
+        row("C. gamma", 30), row("D. delta", 40),
+        row("Solution", 50), row("The explanation text must not be copied", 60),
+    ]
+    parsed = parse_question_regions(rows)
+    assert parsed["options"]["D"] == "delta"
+    assert "explanation text" not in str(parsed).lower()
+    assert parsed["explanation"] is None
+
+
+def test_bare_explanation_heading_is_not_appended_to_option_d():
+    rows = [
+        row("Question stem", 1), row("A. alpha", 10), row("B. beta", 20),
+        row("C. gamma", 30), row("D. delta", 40),
+        row("Explanation", 50), row("This content must be excluded", 60),
+    ]
+    parsed = parse_question_regions(rows)
+    assert parsed["options"]["D"] == "delta"
+    assert "This content must be excluded" not in str(parsed)
