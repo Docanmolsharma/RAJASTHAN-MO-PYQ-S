@@ -53,6 +53,23 @@ async def require_cortex_session(authorization: str | None = Header(default=None
         raise HTTPException(401, "Supabase Auth returned no user")
     return {"user_id": user["id"], "email": user.get("email")}
 
+
+async def _read_upload_bounded(upload: UploadFile, total_bytes: int, max_bytes: int) -> tuple[bytes, int]:
+    """Read an upload in bounded chunks and enforce the aggregate request budget."""
+    chunks: list[bytes] = []
+    try:
+        while True:
+            chunk = await upload.read(1024 * 1024)
+            if not chunk:
+                break
+            total_bytes += len(chunk)
+            if total_bytes > max_bytes:
+                raise HTTPException(413, f"Total upload exceeds configured limit ({max_bytes} bytes)")
+            chunks.append(chunk)
+        return b"".join(chunks), total_bytes
+    finally:
+        await upload.close()
+
 @app.get("/api/health")
 def health():
     return {"status": "ok", "ocr": "lazy-loaded", "storage": "configured",
@@ -85,18 +102,7 @@ async def create_job(
     # an oversized upload fully in memory.
     for upload in files:
         name = Path(upload.filename or "upload").name
-        chunks: list[bytes] = []
-        while True:
-            chunk = await upload.read(1024 * 1024)
-            if not chunk:
-                break
-            total_bytes += len(chunk)
-            if total_bytes > max_upload:
-                await upload.close()
-                raise HTTPException(413, f"Total upload exceeds configured limit ({max_upload} bytes)")
-            chunks.append(chunk)
-        await upload.close()
-        data = b"".join(chunks)
+        data, total_bytes = await _read_upload_bounded(upload, total_bytes, max_upload)
         suffix = Path(name).suffix.lower()
         if suffix == ".zip":
             try:
