@@ -74,3 +74,21 @@ def test_parser_supports_badge_labels_without_punctuation():
     assert parsed["selected_answer"] == "A"
     assert parsed["correct_answer"] == "C"
     assert parsed["result"] == "incorrect"
+
+
+def test_wrapped_option_d_is_preserved_without_copying_explanation():
+    rows = [
+        row("Question stem", 1),
+        row("A. alpha", 10),
+        row("B. beta", 20),
+        row("C. gamma", 30),
+        row("D. first line of option", 40),
+        row("continued second line of option", 45),
+        row("Correct Answer: D", 60),
+        row("Explanation: private solution text", 70),
+    ]
+    parsed = parse_question_regions(rows)
+    assert parsed["options"]["D"] == "first line of option continued second line of option"
+    assert parsed["correct_answer"] == "D"
+    assert parsed["explanation"] is None
+    assert "private solution text" not in str(parsed)
