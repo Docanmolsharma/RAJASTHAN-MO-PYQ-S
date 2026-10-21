@@ -29,7 +29,7 @@ class PaddleOCRService:
         """
         import cv2
         import re
-        match = re.match(r"^\\s*([A-D])(?:\\s*[).:]|\\s+)", text, re.I)
+        match = re.match(r"^\s*([A-D])(?:\s*[).:]|\s+)", text, re.I)
         if not match:
             return None
         arr = np.asarray(image.convert("RGB"))
