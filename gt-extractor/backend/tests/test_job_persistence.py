@@ -49,3 +49,27 @@ def test_job_listing_is_scoped_to_authenticated_user(tmp_path, monkeypatch):
 
     assert [item["job_id"] for item in data_store.list_jobs_for_user("user-a")] == ["job-a"]
     assert [item["job_id"] for item in data_store.list_jobs_for_user("user-b")] == ["job-b"]
+
+
+def test_job_result_survives_restart_and_is_owner_scoped(tmp_path, monkeypatch):
+    monkeypatch.setattr(data_store, "DB_PATH", tmp_path / "results.sqlite3")
+    result = {
+        "job_id": "job-persisted",
+        "gt_id": "GT1",
+        "source_app": "PrepLadder",
+        "expected_questions": 200,
+        "total_images_received": 2,
+        "unique_images_processed": 2,
+        "warnings": [],
+        "images": [{"sha256": "abc", "question_candidate": {"result": "unknown"}}],
+    }
+    data_store.save_job_result(user_id="user-a", result=result)
+
+    # Re-read from the database rather than any process-local cache or JSON file.
+    assert data_store.get_job_result(user_id="user-a", job_id="job-persisted") == result
+    assert data_store.get_job_result(user_id="user-b", job_id="job-persisted") is None
+    jobs = data_store.list_jobs_for_user("user-a")
+    assert len(jobs) == 1
+    assert jobs[0]["job_id"] == "job-persisted"
+    assert jobs[0]["processed"] == 2
+    assert jobs[0]["status"] == "complete"
