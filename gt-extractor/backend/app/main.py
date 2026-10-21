@@ -153,8 +153,7 @@ async def get_job(job_id: str, user: dict[str, Any] = Depends(require_cortex_ses
 
 @app.get("/api/jobs/{job_id}/download")
 async def download_result(job_id: str, user: dict[str, Any] = Depends(require_cortex_session)):
-    job = jobs.get(job_id)
-    if not job or job.get("user_id") != user["user_id"]:
+    if not user_owns_job(user["user_id"], job_id):
         raise HTTPException(404, "Job not found")
     path = RESULTS / f"{job_id}.json"
     if not path.exists():
