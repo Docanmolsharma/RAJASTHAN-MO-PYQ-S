@@ -77,11 +77,20 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     answer_match = ANSWER_RE.search(all_text)
     green_options = [letter for letter, row in option_rows.items() if _marker(row) == "green"]
     red_options = [letter for letter, row in option_rows.items() if _marker(row) == "red"]
-    correct_answer = answer_match.group(1).upper() if answer_match else None
-    if correct_answer is None and len(green_options) == 1:
-        correct_answer = green_options[0]
+    explicit_correct = answer_match.group(1).upper() if answer_match else None
+    # Conflicting colour and OCR evidence must never be silently converted into
+    # a confident correct/incorrect result.
+    marker_conflict = len(green_options) > 1 or len(red_options) > 1
+    if explicit_correct and len(green_options) == 1 and explicit_correct != green_options[0]:
+        marker_conflict = True
+        warnings.append("Explicit correct-answer text conflicts with the green option marker")
+    if marker_conflict:
+        warnings.append("Conflicting or multiple option markers; manual review required")
+        correct_answer = None
+    else:
+        correct_answer = explicit_correct or (green_options[0] if len(green_options) == 1 else None)
     selected_answer: str | None = None
-    if not missed:
+    if not missed and not marker_conflict:
         if len(red_options) == 1:
             selected_answer = red_options[0]
         elif len(green_options) == 1 and len(red_options) == 0:
@@ -90,7 +99,9 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
         result = "unattempted"
         selected_answer = None
         if not correct_answer:
-            warnings.append("Missed-question banner found, but correct option marker was not identified")
+            warnings.append("Missed-question banner found, but correct option could not be identified reliably")
+    elif marker_conflict:
+        result = "unknown"
     elif correct_answer and selected_answer:
         result = "correct" if selected_answer == correct_answer else "incorrect"
     else:
