@@ -166,6 +166,10 @@ async def create_job(
                 rows = ocr.extract(image)
                 candidate = parse_question_regions(rows)
                 ocr_error = None
+                # Surface parser-quality warnings at batch level; zero upload warnings
+                # must not be mistaken for a clean OCR extraction.
+                for parser_warning in candidate.get("warnings", []):
+                    warnings.append(f"{source_name}: {parser_warning}")
             except OCRUnavailable as exc:
                 rows, candidate, ocr_error = [], None, str(exc)
             except Exception as exc:
