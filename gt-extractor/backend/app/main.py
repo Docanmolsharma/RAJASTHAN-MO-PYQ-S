@@ -92,8 +92,6 @@ async def create_job(
     if not files:
         raise HTTPException(400, "Select at least one image or ZIP")
     job_id = str(uuid.uuid4())
-    job_dir = UPLOADS / job_id
-    job_dir.mkdir(parents=True, exist_ok=True)
     warnings: list[str] = []
     staged: list[tuple[str, bytes]] = []
     total_bytes = 0
@@ -119,6 +117,9 @@ async def create_job(
         raise HTTPException(400, "No supported images found in upload")
     if len(staged) > int(os.getenv("GT_MAX_FILES", "500")):
         raise HTTPException(413, "Image count exceeds configured limit")
+    # Do not create per-job disk state until the full request passes validation.
+    job_dir = UPLOADS / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
     seen: dict[str, dict[str, Any]] = {}
     image_results: list[dict[str, Any]] = []
     for source_name, data in staged:
