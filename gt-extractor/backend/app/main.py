@@ -51,6 +51,7 @@ def health():
 
 @app.post("/api/jobs")
 async def create_job(
+    user: dict[str, Any] = Depends(require_cortex_session),
     gt_id: str = Form(...),
     expected_questions: int = Form(200),
     source_app: str = Form("PrepLadder"),
