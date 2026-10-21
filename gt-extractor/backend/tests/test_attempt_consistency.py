@@ -43,3 +43,24 @@ def test_unattempted_remains_unattempted_after_answer_verification(tmp_path, mon
     })
     attempt = data_store.list_attempts(user_id="user-1")[0]
     assert attempt["outcome"] == "unattempted"
+
+
+def test_attempt_patch_cannot_claim_correct_without_selected_answer(tmp_path, monkeypatch):
+    monkeypatch.setattr(data_store, "DB_PATH", tmp_path / "patch-history.sqlite3")
+    saved = _capture(data_store, "unknown", selected=None, correct="B")
+    assert data_store.update_attempt(saved["attempt_history_id"], "user-1", {
+        "selected_answer": None, "correct_answer": "B", "outcome": "correct",
+    })
+    attempt = data_store.list_attempts(user_id="user-1")[0]
+    assert attempt["selected_answer"] is None
+    assert attempt["outcome"] == "unknown"
+
+
+def test_attempt_patch_derives_outcome_from_verified_answers(tmp_path, monkeypatch):
+    monkeypatch.setattr(data_store, "DB_PATH", tmp_path / "patch-history.sqlite3")
+    saved = _capture(data_store, "unknown", selected="A", correct="B")
+    assert data_store.update_attempt(saved["attempt_history_id"], "user-1", {
+        "selected_answer": "A", "correct_answer": "B", "outcome": "correct",
+    })
+    attempt = data_store.list_attempts(user_id="user-1")[0]
+    assert attempt["outcome"] == "incorrect"
