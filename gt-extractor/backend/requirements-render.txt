@@ -1,0 +1,9 @@
+# Render native-Python deployment dependencies.
+# Keep the lightweight test/dev requirements in requirements.txt.
+-r requirements.txt
+
+# PaddleOCR 2.x matches app/services/ocr_service.py (.ocr(..., cls=True)).
+# PaddlePaddle 2.x has CPU wheels suitable for Render's Linux runtime.
+numpy>=1.24,<2.0
+paddleocr>=2.7,<3.0
+paddlepaddle>=2.6.2,<3.0
