@@ -1,8 +1,6 @@
-# Render native-Python deployment dependencies.
-# Keep the lightweight test/dev requirements in requirements.txt.
+# OCR-enabled Render Docker deployment dependencies.
+# The Dockerfile installs the system tesseract-ocr package; pip installs its Python adapter.
 -r requirements.txt
 
-# Tesseract OCR uses a low-memory native engine. Render's standard Python build image
-# already provides the tesseract binary; keep builds unprivileged (no apt-get).
 numpy>=1.24,<2.0
 pytesseract>=0.3.13,<1.0
