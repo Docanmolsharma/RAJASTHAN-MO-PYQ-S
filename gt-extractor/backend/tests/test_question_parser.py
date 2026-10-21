@@ -62,3 +62,15 @@ def test_unclear_options_are_flagged_unknown():
     assert parsed["selected_answer"] is None
     assert parsed["result"] == "unknown"
     assert parsed["warnings"]
+
+
+def test_parser_supports_badge_labels_without_punctuation():
+    rows = [row("Question stem", 1), row("A Analytical statistics", 10, "red"),
+            row("B Inferential statistics", 20), row("C Descriptive statistics", 30, "green"),
+            row("D Theoretical statistics", 40), row("Correct Answer: C", 60)]
+    parsed = parse_question_regions(rows)
+    assert parsed["options"]["A"].startswith("Analytical")
+    assert parsed["options"]["C"].startswith("Descriptive")
+    assert parsed["selected_answer"] == "A"
+    assert parsed["correct_answer"] == "C"
+    assert parsed["result"] == "incorrect"
