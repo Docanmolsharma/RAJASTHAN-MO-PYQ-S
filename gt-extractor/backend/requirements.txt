@@ -9,3 +9,5 @@ pytest>=8.0
 # Optional OCR runtime (platform/model-size dependent):
 # pip install paddleocr paddlepaddle
 httpx>=0.27,<1.0
+
+numpy>=1.24,<3.0
