@@ -141,7 +141,8 @@ def update_question(question_id: str, user_id: str, payload: dict[str, Any]) -> 
            payload.get("module_name"),1 if payload.get("verified") else 0,question_id,user_id))
         if cur.rowcount:
             db.execute("""UPDATE attempt_history SET correct_answer=?,
-              outcome=CASE WHEN ? IS NULL OR selected_answer IS NULL THEN outcome
+              outcome=CASE WHEN outcome='unattempted' AND selected_answer IS NULL THEN 'unattempted'
+                           WHEN ? IS NULL OR selected_answer IS NULL THEN 'unknown'
                            WHEN selected_answer=? THEN 'correct' ELSE 'incorrect' END
               WHERE question_id=? AND user_id=?""",(correct,correct,correct,question_id,user_id))
         return cur.rowcount > 0
