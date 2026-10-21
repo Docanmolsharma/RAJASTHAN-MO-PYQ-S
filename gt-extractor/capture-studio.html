@@ -20,9 +20,10 @@ $('capture').disabled=true;$('status').textContent='Uploading to OCR service…'
 try{const form=new FormData();form.append('gt_id',$('module').value.trim()||'Capture');form.append('expected_questions',String(files.length));form.append('source_app',$('source').value);files.forEach(f=>form.append('files',f,f.name));
 const response=await fetch(backend+'/api/jobs',{method:'POST',headers:{'Authorization':'Bearer '+session.access_token},body:form});const payload=await response.json();if(!response.ok)throw new Error(payload.detail||'OCR service HTTP '+response.status);
 const result=payload.result;let saved=0,failed=[];
-const fileByName=new Map(files.map(file=>[file.name,file]));
+const fileByHash=new Map();
+for(const file of files){const digest=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());const hash=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');fileByHash.set(hash,file)}
 for(const item of result.images){const q=item.question_candidate||{};const opts=q.options||{};
-const sourceName=(item.source_images||[])[0]||'';const sourceFile=fileByName.get(sourceName);
+const sourceName=(item.source_images||[])[0]||'';const sourceFile=fileByHash.get(item.sha256);
 if(!sourceFile){failed.push(sourceName+': original image could not be matched for cloud storage');continue}
 const ext=(sourceFile.name.split('.').pop()||'jpg').toLowerCase();
 const storagePath=session.user.id+'/'+crypto.randomUUID()+'.'+ext;
