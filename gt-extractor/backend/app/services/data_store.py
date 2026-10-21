@@ -163,7 +163,13 @@ def update_attempt(attempt_id: str, user_id: str, payload: dict[str, Any]) -> bo
         raise ValueError("answers must be A, B, C, D or null")
     if outcome not in {"correct","incorrect","unattempted","unknown"}:
         raise ValueError("invalid outcome")
-    if selected and correct:
+    # Keep stored answer/outcome fields logically consistent even when a
+    # client sends a contradictory PATCH payload.
+    if outcome == "unattempted":
+        selected = None
+    elif selected is None or correct is None:
+        outcome = "unknown"
+    else:
         outcome = "correct" if selected == correct else "incorrect"
     with connect() as db:
         cur = db.execute("""UPDATE attempt_history SET selected_answer=?,correct_answer=?,outcome=?,attempt_label=?
