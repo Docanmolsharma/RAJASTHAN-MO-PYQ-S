@@ -42,7 +42,17 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     if not all(k in option_starts for k in "ABCD"):
         warnings.append("Could not confidently identify all four option boundaries")
     d_index = option_starts.get("D")
-    included = ordered[:d_index + 1] if d_index is not None else ordered
+    # Keep wrapped D-option lines, but stop before explicit answer/explanation metadata.
+    # This avoids the old bug where option D was always truncated to its first OCR line.
+    explanation_start = re.compile(
+        r"(?i)^\\s*(?:explanation|solution|discussion|correct\\s+answer|answer\\s+key|reference|why\\s+others|pearls?)\\s*[:：-]"
+    )
+    included: list[dict[str, Any]] = []
+    for idx, row in enumerate(ordered):
+        text = str(row.get("text", "")).strip()
+        if d_index is not None and idx > d_index and explanation_start.search(text):
+            break
+        included.append(row)
     options: dict[str, str] = {}
     option_rows: dict[str, dict[str, Any]] = {}
     current: str | None = None
