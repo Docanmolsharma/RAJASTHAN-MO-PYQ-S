@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import Any
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import httpx
 from .services.archive_service import safe_zip_images, SUPPORTED
 from .services.image_service import normalize_image
 from .services.ocr_service import PaddleOCRService, OCRUnavailable
 from .services.question_parser import parse_question_regions
-from .services.data_store import init_db, save_capture, list_questions, list_attempts, update_question, update_attempt, user_owns_job, list_jobs_for_user
+from .services.data_store import init_db, save_capture, list_questions, list_attempts, update_question, update_attempt, user_owns_job, list_jobs_for_user, save_job_result, get_job_result
 
 DATA = Path(os.getenv("GT_DATA_DIR", "data")).resolve()
 UPLOADS, PREVIEWS, RESULTS = DATA / "uploads", DATA / "previews", DATA / "results"
@@ -140,6 +140,9 @@ async def create_job(
         "expected_questions": expected_questions, "total_images_received": len(staged),
         "unique_images_processed": len(image_results), "warnings": warnings, "images": image_results
     }
+    # SQLite is the durable source of truth for batch JSON; the local file is a
+    # convenient download fast-path only and may disappear on ephemeral hosts.
+    save_job_result(user_id=user["user_id"], result=result)
     result_path = RESULTS / f"{job_id}.json"
     result_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     jobs[job_id] = {"job_id": job_id, "gt_id": gt_id, "source_app": source_app, "status": "complete",
@@ -156,18 +159,24 @@ async def get_job(job_id: str, user: dict[str, Any] = Depends(require_cortex_ses
     if not user_owns_job(user["user_id"], job_id):
         raise HTTPException(404, "Job not found")
     path = RESULTS / f"{job_id}.json"
-    if not path.exists():
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    result = get_job_result(user_id=user["user_id"], job_id=job_id)
+    if result is None:
         raise HTTPException(404, "Job result not found")
-    return json.loads(path.read_text(encoding="utf-8"))
+    return result
 
 @app.get("/api/jobs/{job_id}/download")
 async def download_result(job_id: str, user: dict[str, Any] = Depends(require_cortex_session)):
     if not user_owns_job(user["user_id"], job_id):
         raise HTTPException(404, "Job not found")
     path = RESULTS / f"{job_id}.json"
-    if not path.exists():
+    if path.exists():
+        return FileResponse(path, media_type="application/json", filename=f"{job_id}_ocr.json")
+    result = get_job_result(user_id=user["user_id"], job_id=job_id)
+    if result is None:
         raise HTTPException(404, "Job result not found")
-    return FileResponse(path, media_type="application/json", filename=f"{job_id}_ocr.json")
+    return JSONResponse(content=result, headers={"Content-Disposition": f'attachment; filename="{job_id}_ocr.json"'})
 
 @app.get("/api/jobs/{job_id}/previews/{digest}")
 async def get_preview(job_id: str, digest: str, user: dict[str, Any] = Depends(require_cortex_session)):
