@@ -17,7 +17,7 @@ UPLOADS, PREVIEWS, RESULTS = DATA / "uploads", DATA / "previews", DATA / "result
 for folder in (UPLOADS, PREVIEWS, RESULTS):
     folder.mkdir(parents=True, exist_ok=True)
 init_db()
-app = FastAPI(title="CORTEX GT Extractor", version="0.2.0")
+app = FastAPI(title="CORTEX GT Extractor", version="0.2.1")
 # Production deployments should set GT_ALLOWED_ORIGINS to a comma-separated allowlist.
 # Do not use wildcard origins for a service that accepts authenticated uploads.
 _allowed_origins = [origin.strip().rstrip("/") for origin in os.getenv("GT_ALLOWED_ORIGINS", "").split(",") if origin.strip()]
