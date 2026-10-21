@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 OPTION_RE = re.compile(r"^\s*([A-D])(?:\s*[).:]|\s+)\s*(.*)$", re.I)
-ANSWER_RE = re.compile(r"(?i)\bcorrect\s+answer\s*[:：-]?\s*\(?\s*([A-D])\s*\)?")
+ANSWER_RE = re.compile(r"(?im)^[ \t]*correct[ \t]+answer[ \t]*[:：-]?[ \t]*\(?[ \t]*([A-D])(?:[ \t]*\)?)?(?=[ \t]*(?:$|[.)：:-]))")
 MISSED_RE = re.compile(r"(?i)you\s+missed\s+this\s+question")
 
 
