@@ -61,7 +61,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     image-colour detector has classified the option badge. Plain OCR text alone
     is not treated as proof of a user's selected option.
     """
-    ordered = sorted(_logical_lines(ocr_rows), key=lambda r: (_row_y(r), _row_x(r)))
+    ordered = sorted(_clean_screen_chrome(_logical_lines(ocr_rows)), key=lambda r: (_row_y(r), _row_x(r)))
     warnings: list[str] = []
     all_text = "\n".join(str(r.get("text", "")).strip() for r in ordered if r.get("text"))
     missed = bool(MISSED_RE.search(all_text))
