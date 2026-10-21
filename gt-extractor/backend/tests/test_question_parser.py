@@ -155,3 +155,20 @@ def test_bare_explanation_heading_is_not_appended_to_option_d():
     parsed = parse_question_regions(rows)
     assert parsed["options"]["D"] == "delta"
     assert "This content must be excluded" not in str(parsed)
+
+
+def test_explicit_answer_heading_with_option_text_keeps_letter():
+    rows = [row("Question stem", 1), row("A. alpha", 10), row("B. beta", 20),
+            row("C. gamma", 30), row("D. delta", 40),
+            row("Correct Answer: B) beta", 60)]
+    parsed = parse_question_regions(rows)
+    assert parsed["correct_answer"] == "B"
+
+
+def test_answer_parser_does_not_take_letter_from_following_option_row():
+    rows = [row("Question stem", 1), row("Correct Answer", 5),
+            row("A. alpha", 10), row("B. beta", 20),
+            row("C. gamma", 30), row("D. delta", 40)]
+    parsed = parse_question_regions(rows)
+    assert parsed["correct_answer"] is None
+    assert parsed["result"] == "unknown"
