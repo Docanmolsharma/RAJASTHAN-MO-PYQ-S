@@ -10,7 +10,7 @@ from .services.archive_service import safe_zip_images, SUPPORTED
 from .services.image_service import normalize_image
 from .services.ocr_service import PaddleOCRService, OCRUnavailable
 from .services.question_parser import parse_question_regions
-from .services.data_store import init_db, save_capture, list_questions, list_attempts, update_question, update_attempt
+from .services.data_store import init_db, save_capture, list_questions, list_attempts, update_question, update_attempt, user_owns_job, list_jobs_for_user
 
 DATA = Path(os.getenv("GT_DATA_DIR", "data")).resolve()
 UPLOADS, PREVIEWS, RESULTS = DATA / "uploads", DATA / "previews", DATA / "results"
@@ -140,12 +140,11 @@ async def create_job(
 
 @app.get("/api/jobs")
 async def list_jobs(user: dict[str, Any] = Depends(require_cortex_session)):
-    return [j for j in jobs.values() if j.get("user_id") == user["user_id"]]
+    return list_jobs_for_user(user["user_id"])
 
 @app.get("/api/jobs/{job_id}")
 async def get_job(job_id: str, user: dict[str, Any] = Depends(require_cortex_session)):
-    job = jobs.get(job_id)
-    if not job or job.get("user_id") != user["user_id"]:
+    if not user_owns_job(user["user_id"], job_id):
         raise HTTPException(404, "Job not found")
     path = RESULTS / f"{job_id}.json"
     if not path.exists():
