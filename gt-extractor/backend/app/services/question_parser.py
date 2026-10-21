@@ -45,7 +45,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     # Keep wrapped D-option lines, but stop before explicit answer/explanation metadata.
     # This avoids the old bug where option D was always truncated to its first OCR line.
     explanation_start = re.compile(
-        r"(?i)^\\s*(?:explanation|solution|discussion|correct\\s+answer|answer\\s+key|reference|why\\s+others|pearls?)\\s*[:：-]"
+        r"(?i)^\s*(?:explanation|solution|discussion|correct\s+answer|answer\s+key|reference|why\s+others|pearls?)\s*[:：-]"
     )
     included: list[dict[str, Any]] = []
     for idx, row in enumerate(ordered):
