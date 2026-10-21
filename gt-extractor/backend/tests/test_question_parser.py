@@ -172,3 +172,26 @@ def test_answer_parser_does_not_take_letter_from_following_option_row():
     parsed = parse_question_regions(rows)
     assert parsed["correct_answer"] is None
     assert parsed["result"] == "unknown"
+
+
+def test_removes_status_bar_and_question_counter_from_stem():
+    rows = [
+        row("12:58PM Wed 21 Oct 0167% @ Question 190 of 200", 0),
+        row("A 62-year-old man with diabetes presents with erectile dysfunction", 10),
+        row("A. alpha", 30), row("B. beta", 40), row("C. gamma", 50), row("D. delta", 60),
+    ]
+    parsed = parse_question_regions(rows)
+    assert "12:58PM" not in parsed["question_text"]
+    assert "Question 190 of 200" not in parsed["question_text"]
+    assert "62-year-old man" in parsed["question_text"]
+
+
+def test_question_counter_is_removed_when_attached_to_header_text():
+    rows = [
+        row("Question 191 of 200", 0),
+        row("A 35-year-old man presents after being stabbed", 10),
+        row("A. alpha", 30), row("B. beta", 40), row("C. gamma", 50), row("D. delta", 60),
+    ]
+    parsed = parse_question_regions(rows)
+    assert "Question 191 of 200" not in parsed["question_text"]
+    assert "35-year-old man" in parsed["question_text"]
