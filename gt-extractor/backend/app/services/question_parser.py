@@ -50,7 +50,11 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     included: list[dict[str, Any]] = []
     for idx, row in enumerate(ordered):
         text = str(row.get("text", "")).strip()
-        if d_index is not None and idx > d_index and explanation_start.search(text):
+        # Review banners are evidence for attempt status, not part of Option D.
+        # Keep them in all_text for detection, but exclude them from question content.
+        if d_index is not None and idx > d_index and (
+            explanation_start.search(text) or MISSED_RE.search(text)
+        ):
             break
         included.append(row)
     options: dict[str, str] = {}
