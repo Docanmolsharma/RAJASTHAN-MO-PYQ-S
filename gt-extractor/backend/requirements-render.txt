@@ -2,6 +2,6 @@
 # Keep the lightweight test/dev requirements in requirements.txt.
 -r requirements.txt
 
-# ONNX Runtime based OCR keeps memory use lower on Render's 512 MB free instance.
+# Tesseract OCR uses a low-memory native engine; install the tesseract-ocr OS package in Render build command.
 numpy>=1.24,<2.0
-rapidocr-onnxruntime==1.4.4
+pytesseract>=0.3.13,<1.0
