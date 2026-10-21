@@ -195,3 +195,14 @@ def test_question_counter_is_removed_when_attached_to_header_text():
     parsed = parse_question_regions(rows)
     assert "Question 191 of 200" not in parsed["question_text"]
     assert "35-year-old man" in parsed["question_text"]
+
+
+def test_status_bar_and_counter_do_not_delete_clinical_stem():
+    rows = [
+        row("12:58PM Wed 21 Oct 0167% @ Question 190 of 200 A 62-year-old man with diabetes", 1),
+        row("A. alpha", 20), row("B. beta", 30), row("C. gamma", 40), row("D. delta", 50),
+    ]
+    parsed = parse_question_regions(rows)
+    assert "62-year-old man with diabetes" in parsed["question_text"]
+    assert "12:58PM" not in parsed["question_text"]
+    assert "Question 190 of 200" not in parsed["question_text"]
