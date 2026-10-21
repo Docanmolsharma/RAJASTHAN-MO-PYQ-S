@@ -176,8 +176,10 @@ def user_owns_job(user_id: str, job_id: str) -> bool:
     init_db()
     with connect() as db:
         row = db.execute(
-            "SELECT 1 FROM capture_items WHERE user_id=? AND job_id=? LIMIT 1",
-            (user_id, job_id),
+            """SELECT 1 FROM job_runs WHERE user_id=? AND job_id=?
+               UNION ALL
+               SELECT 1 FROM capture_items WHERE user_id=? AND job_id=? LIMIT 1""",
+            (user_id, job_id, user_id, job_id),
         ).fetchone()
     return row is not None
 
