@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "gt-extractor/backend/**"
+      - "gt-extractor/capture-studio.html"
       - ".github/workflows/gt-extractor-tests.yml"
   push:
     branches: ["feat/gt-extractor-mvp"]
