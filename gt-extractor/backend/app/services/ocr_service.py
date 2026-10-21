@@ -1,35 +1,35 @@
 from __future__ import annotations
 from typing import Any
-
 import numpy as np
 
 class OCRUnavailable(RuntimeError):
     pass
 
-class RapidOCRService:
-    """Lazy OCR wrapper preserving text, confidence, polygon boxes and option badge colours."""
+class TesseractOCRService:
+    """Low-memory OCR adapter using the system Tesseract binary and pytesseract."""
     def __init__(self) -> None:
-        self._engine = None
+        self._pytesseract = None
 
     def _get_engine(self):
-        if self._engine is None:
+        if self._pytesseract is None:
             try:
-                from rapidocr_onnxruntime import RapidOCR
+                import pytesseract
+                from shutil import which
+                if not which("tesseract"):
+                    raise OCRUnavailable(
+                        "Tesseract binary is missing. Render build command must install tesseract-ocr."
+                    )
+                self._pytesseract = pytesseract
             except ImportError as exc:
-                raise OCRUnavailable("RapidOCR is not installed. Install with: pip install rapidocr-onnxruntime") from exc
-            self._engine = RapidOCR()
-        return self._engine
+                raise OCRUnavailable("pytesseract is not installed.") from exc
+        return self._pytesseract
 
     @staticmethod
     def _option_marker(image, text: str, box) -> str | None:
-        """Classify red/green option badge pixels near an OCR A-D label.
-
-        Conservative HSV detection: only emits a marker when a substantial
-        fraction of the small badge-area crop is clearly red or green.
-        """
+        """Conservatively classify green/red pixels near an OCR A-D option label."""
         import cv2
         import re
-        match = re.match(r"^\s*([A-D])(?:\s*[).:]|\s+)", text, re.I)
+        match = re.match(r"^\\s*([A-D])(?:\\s*[).:]|\\s+)", text, re.I)
         if not match:
             return None
         arr = np.asarray(image.convert("RGB"))
@@ -37,43 +37,52 @@ class RapidOCRService:
         xs = [float(p[0]) for p in box]
         ys = [float(p[1]) for p in box]
         x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
-        # PaddleOCR's text box often starts on the option badge itself. Include
-        # a small area to the left and around the first label, excluding most text.
         left = max(0, int(x0 - max(12, (y1-y0) * 1.4)))
         right = min(w, int(x0 + max(10, (y1-y0) * 0.65)))
         top = max(0, int(y0 - (y1-y0) * 0.25))
         bottom = min(h, int(y1 + (y1-y0) * 0.25))
         if right <= left or bottom <= top:
             return None
-        crop = arr[top:bottom, left:right]
-        hsv = cv2.cvtColor(crop, cv2.COLOR_RGB2HSV)
-        # Ignore low-saturation white/grey background and dark text.
+        hsv = cv2.cvtColor(arr[top:bottom, left:right], cv2.COLOR_RGB2HSV)
         red = (((hsv[:,:,0] <= 10) | (hsv[:,:,0] >= 170)) & (hsv[:,:,1] >= 75) & (hsv[:,:,2] >= 65))
         green = ((hsv[:,:,0] >= 32) & (hsv[:,:,0] <= 95) & (hsv[:,:,1] >= 55) & (hsv[:,:,2] >= 55))
-        total = max(1, crop.shape[0] * crop.shape[1])
-        red_ratio, green_ratio = float(red.sum())/total, float(green.sum())/total
-        if red_ratio >= 0.12 and red_ratio > green_ratio * 1.35:
+        total = max(1, hsv.shape[0] * hsv.shape[1])
+        rr, gr = float(red.sum()) / total, float(green.sum()) / total
+        if rr >= 0.12 and rr > gr * 1.35:
             return "red"
-        if green_ratio >= 0.12 and green_ratio > red_ratio * 1.35:
+        if gr >= 0.12 and gr > rr * 1.35:
             return "green"
         return None
 
     def extract(self, image) -> list[dict[str, Any]]:
-        # RapidOCR/ONNX Runtime has a smaller runtime footprint than PaddlePaddle.
+        pytesseract = self._get_engine()
+        # Tesseract is a separate native process and uses substantially less RAM
+        # than loading a deep-learning OCR model into the 512 MB Render instance.
         rgb = np.asarray(image.convert("RGB"))
-        result, _elapsed = self._get_engine()(rgb)
+        h, w = rgb.shape[:2]
+        scale = min(1.0, 1800.0 / max(h, w))
+        if scale < 1.0:
+            import cv2
+            rgb = cv2.resize(rgb, (max(1, int(w*scale)), max(1, int(h*scale))), interpolation=cv2.INTER_AREA)
+        data = pytesseract.image_to_data(
+            rgb, lang="eng", config="--oem 1 --psm 6",
+            output_type=pytesseract.Output.DICT
+        )
         rows: list[dict[str, Any]] = []
-        for item in result or []:
-            if not item or len(item) < 3:
+        for i, value in enumerate(data.get("text", [])):
+            text = str(value or "").strip()
+            if not text:
                 continue
-            box, text_value, confidence = item[0], item[1], item[2]
-            text = str(text_value or "")
-            row = {
-                "text": text,
-                "bbox": [[float(p[0]), float(p[1])] for p in box],
-                "confidence": float(confidence) if confidence is not None else None,
-            }
-            marker = self._option_marker(image, text, box)
+            try:
+                conf = float(data["conf"][i])
+                confidence = conf / 100.0 if conf >= 0 else None
+            except (ValueError, TypeError, KeyError):
+                confidence = None
+            x, y = int(data["left"][i]), int(data["top"][i])
+            bw, bh = int(data["width"][i]), int(data["height"][i])
+            box = [[x, y], [x+bw, y], [x+bw, y+bh], [x, y+bh]]
+            row = {"text": text, "bbox": [[float(a), float(b)] for a,b in box], "confidence": confidence}
+            marker = self._option_marker(image, text, [[a/scale, b/scale] for a,b in box])
             if marker:
                 row["option_marker"] = marker
             rows.append(row)
