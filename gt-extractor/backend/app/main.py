@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Any
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse\nimport httpx
+from fastapi.responses import FileResponse
+import httpx
 from .services.archive_service import safe_zip_images, SUPPORTED
 from .services.image_service import normalize_image
 from .services.ocr_service import PaddleOCRService, OCRUnavailable
@@ -20,7 +21,28 @@ app = FastAPI(title="CORTEX GT Extractor", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 ocr = PaddleOCRService()
 jobs: dict[str, dict[str, Any]] = {}
-SOURCE_APPS = {"PrepLadder","Marrow","Cerebellum","Book","Other"}\n\nasync def require_cortex_session(authorization: str | None = Header(default=None)) -> dict[str, Any]:\n    """Validate the signed-in CORTEX user token with Supabase Auth; never trust a client-supplied user id."""\n    base = os.getenv("SUPABASE_URL", "").rstrip("/")\n    public_key = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")\n    if not base or not public_key:\n        raise HTTPException(503, "Backend auth is not configured: set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY")\n    if not authorization or not authorization.lower().startswith("bearer "):\n        raise HTTPException(401, "A signed-in CORTEX session is required")\n    token = authorization.split(" ", 1)[1].strip()\n    try:\n        async with httpx.AsyncClient(timeout=10.0) as client:\n            response = await client.get(base + "/auth/v1/user", headers={"apikey": public_key, "Authorization": "Bearer " + token})\n    except httpx.HTTPError as exc:\n        raise HTTPException(503, "Could not validate CORTEX session with Supabase Auth") from exc\n    if response.status_code != 200:\n        raise HTTPException(401, "CORTEX session is invalid or expired")\n    user = response.json()\n    if not user.get("id"):\n        raise HTTPException(401, "Supabase Auth returned no user")\n    return {"user_id": user["id"], "email": user.get("email")}
+SOURCE_APPS = {"PrepLadder","Marrow","Cerebellum","Book","Other"}
+
+async def require_cortex_session(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """Validate the signed-in CORTEX user token with Supabase Auth; never trust a client-supplied user id."""
+    base = os.getenv("SUPABASE_URL", "").rstrip("/")
+    public_key = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
+    if not base or not public_key:
+        raise HTTPException(503, "Backend auth is not configured: set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY")
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(401, "A signed-in CORTEX session is required")
+    token = authorization.split(" ", 1)[1].strip()
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(base + "/auth/v1/user", headers={"apikey": public_key, "Authorization": "Bearer " + token})
+    except httpx.HTTPError as exc:
+        raise HTTPException(503, "Could not validate CORTEX session with Supabase Auth") from exc
+    if response.status_code != 200:
+        raise HTTPException(401, "CORTEX session is invalid or expired")
+    user = response.json()
+    if not user.get("id"):
+        raise HTTPException(401, "Supabase Auth returned no user")
+    return {"user_id": user["id"], "email": user.get("email")}
 
 @app.get("/api/health")
 def health():
