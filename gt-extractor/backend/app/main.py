@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, JSONResponse
 import httpx
 from .services.archive_service import safe_zip_images, SUPPORTED
 from .services.image_service import normalize_image
-from .services.ocr_service import PaddleOCRService, OCRUnavailable
+from .services.ocr_service import RapidOCRService, OCRUnavailable
 from .services.question_parser import parse_question_regions
 from .services.data_store import init_db, save_capture, list_questions, list_attempts, update_question, update_attempt, user_owns_job, list_jobs_for_user, save_job_result, get_job_result
 
@@ -28,7 +28,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
-ocr = PaddleOCRService()
+ocr = RapidOCRService()
 jobs: dict[str, dict[str, Any]] = {}
 SOURCE_APPS = {"PrepLadder","Marrow","Cerebellum","Book","Other"}
 
