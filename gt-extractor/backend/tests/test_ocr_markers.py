@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw
 
-from app.services.ocr_service import RapidOCRService
+from app.services.ocr_service import TesseractOCRService
 
 
 def make_badge(color):
@@ -14,7 +14,7 @@ def make_badge(color):
 def test_green_option_badge_detected():
     image = make_badge((35, 170, 80))
     box = [[16, 10], [25, 10], [25, 24], [16, 24]]
-    assert PaddleOCRService._option_marker(image, "A. Option text", box) == "green"
+    assert TesseractOCRService._option_marker(image, "A. Option text", box) == "green"
 
 
 def test_red_option_badge_detected():
