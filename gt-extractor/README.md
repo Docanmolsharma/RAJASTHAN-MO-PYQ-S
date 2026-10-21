@@ -19,6 +19,10 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 Open `capture-studio.html` from the same deployed CORTEX origin so it can reuse the signed-in Supabase session. Configure the deployed OCR backend URL in the page. The backend validates the bearer token against Supabase Auth on every non-health API route, and scopes in-memory job access plus local SQLite records to the authenticated user. The older `frontend/index.html` is a developer preview; production capture should use `capture-studio.html`. For iPhone/iPad use, the browser must be able to reach the backend; mobile Safari itself is not expected to run large OCR batches.
 
+## Container build
+
+`backend/Dockerfile` builds a CPU OCR image with PaddleOCR/PaddlePaddle included. Configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in the host environment. Use a persistent mounted disk for `GT_DATA_DIR`; without it, local previews/results/SQLite records may be lost on redeploy. Job ownership metadata is currently held in process memory, so this is still a single-instance prototype rather than a horizontally scalable service.
+
 ## API
 - `POST /api/jobs`: multi-image/ZIP capture; form fields `gt_id`, `expected_questions`, `source_app`, `files`.
 - `GET /api/questions?source_app=PrepLadder&outcome=incorrect`: module bank with latest attempt summary.
