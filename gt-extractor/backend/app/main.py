@@ -162,8 +162,7 @@ async def download_result(job_id: str, user: dict[str, Any] = Depends(require_co
 
 @app.get("/api/jobs/{job_id}/previews/{digest}")
 async def get_preview(job_id: str, digest: str, user: dict[str, Any] = Depends(require_cortex_session)):
-    job = jobs.get(job_id)
-    if not job or job.get("user_id") != user["user_id"]:
+    if not user_owns_job(user["user_id"], job_id):
         raise HTTPException(404, "Job not found")
     path = PREVIEWS / f"{job_id}_{digest}.jpg"
     if not path.exists():
