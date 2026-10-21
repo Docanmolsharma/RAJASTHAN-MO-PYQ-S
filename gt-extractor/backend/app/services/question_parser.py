@@ -11,20 +11,27 @@ QUESTION_COUNTER_RE = re.compile(r"(?i)\bquestion\s*#?\s*\d{1,4}\s+of\s+\d{1,4}\
 TIME_DATE_RE = re.compile(r"(?i)^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*(?:am|pm)?\b.*(?:mon|tue|wed|thu|fri|sat|sun|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|%|question)")
 
 def _clean_screen_chrome(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Remove obvious device/app chrome before parsing question content."""
+    """Remove app chrome without discarding a clinical stem sharing the same OCR line."""
     cleaned: list[dict[str, Any]] = []
     for row in rows:
         text = str(row.get("text", "")).strip()
         if not text:
             continue
-        if TIME_DATE_RE.search(text):
-            continue
-        text = QUESTION_COUNTER_RE.sub(" ", text)
-        text = re.sub(r"\s+", " ", text).strip(" =@|·")
+        # If time/date/battery/question counter are merged with the stem, remove only
+        # the chrome prefix through the counter rather than dropping the whole line.
+        counter = QUESTION_COUNTER_RE.search(text)
+        if counter:
+            text = text[counter.end():]
+        else:
+            # Trim a leading clock/date fragment only when it is clearly screen chrome.
+            text = re.sub(
+                r"(?i)^\\s*(?:[01]?\\d|2[0-3]):[0-5]\\d\\s*(?:am|pm)?\\s+(?:(?:mon|tue|wed|thu|fri|sat|sun)\\w*\\s+)?(?:\\d{1,2}\\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\w*\\s*",
+                " ", text,
+            )
+        text = re.sub(r"\\s+", " ", text).strip(" =@|·{}")
         if text:
             cleaned.append({**row, "text": text})
     return cleaned
-
 
 def _row_y(row: dict[str, Any]) -> float:
     return min((p[1] for p in row.get("bbox", [])), default=0)
