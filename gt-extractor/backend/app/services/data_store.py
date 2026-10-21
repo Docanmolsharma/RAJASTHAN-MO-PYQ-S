@@ -183,25 +183,33 @@ def user_owns_job(user_id: str, job_id: str) -> bool:
 
 
 def list_jobs_for_user(user_id: str) -> list[dict[str, Any]]:
-    """Rebuild recent job summaries from durable capture rows after process restart."""
+    """List durable job summaries, including older jobs predating job_runs."""
     init_db()
     with connect() as db:
         rows = db.execute("""
-            SELECT job_id, source_app, COUNT(*) AS processed,
-                   MIN(created_at) AS created_at,
-                   SUM(CASE WHEN review_status='pending' THEN 1 ELSE 0 END) AS pending_review
-            FROM capture_items
-            WHERE user_id=?
-            GROUP BY job_id, source_app
-            ORDER BY MIN(created_at) DESC
-        """, (user_id,)).fetchall()
+            SELECT job_id, source_app, unique_images_processed AS processed,
+                   created_at, status,
+                   (SELECT COUNT(*) FROM capture_items c
+                    WHERE c.user_id=j.user_id AND c.job_id=j.job_id
+                      AND c.review_status='pending') AS pending_review
+            FROM job_runs j WHERE user_id=?
+            UNION ALL
+            SELECT c.job_id, c.source_app, COUNT(*) AS processed,
+                   MIN(c.created_at) AS created_at, 'stored' AS status,
+                   SUM(CASE WHEN c.review_status='pending' THEN 1 ELSE 0 END) AS pending_review
+            FROM capture_items c
+            WHERE c.user_id=? AND NOT EXISTS (
+                SELECT 1 FROM job_runs j WHERE j.user_id=c.user_id AND j.job_id=c.job_id
+            )
+            GROUP BY c.job_id, c.source_app
+            ORDER BY created_at DESC
+        """, (user_id,user_id)).fetchall()
     return [
         {"job_id": row["job_id"], "source_app": row["source_app"],
          "processed": row["processed"], "created_at": row["created_at"],
-         "pending_review": row["pending_review"], "status": "stored"}
+         "pending_review": row["pending_review"], "status": row["status"]}
         for row in rows
     ]
-
 
 def save_job_result(*, user_id: str, result: dict[str, Any]) -> None:
     """Persist a complete batch result so API downloads survive process restarts."""
