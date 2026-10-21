@@ -29,7 +29,7 @@ class TesseractOCRService:
         """Conservatively classify green/red pixels near an OCR A-D option label."""
         import cv2
         import re
-        match = re.match(r"^\\s*([A-D])(?:\\s*[).:]|\\s+)", text, re.I)
+        match = re.match(r"^\s*([A-D])(?:\s*[).:]|\s+)", text, re.I)
         if not match:
             return None
         arr = np.asarray(image.convert("RGB"))
@@ -81,7 +81,7 @@ class TesseractOCRService:
             x, y = int(data["left"][i]), int(data["top"][i])
             bw, bh = int(data["width"][i]), int(data["height"][i])
             box = [[x, y], [x+bw, y], [x+bw, y+bh], [x, y+bh]]
-            row = {"text": text, "bbox": [[float(a), float(b)] for a,b in box], "confidence": confidence}
+            row = {"text": text, "bbox": [[float(a), float(b)] for a,b in box], "confidence": confidence, "block_num": int(data["block_num"][i]), "par_num": int(data["par_num"][i]), "line_num": int(data["line_num"][i])}
             marker = self._option_marker(image, text, [[a/scale, b/scale] for a,b in box])
             if marker:
                 row["option_marker"] = marker
