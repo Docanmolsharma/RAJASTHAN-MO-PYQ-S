@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-OPTION_RE = re.compile(r"^\s*([A-D])(?:\s*[).:]|\s+)\s*(.*)$", re.I)
+OPTION_RE = re.compile(r"^\s*([A-D])\s*[).:]\s*(.*)$", re.I)
+LOOSE_OPTION_RE = re.compile(r"^\s*([A-D])\s+([A-Za-z(].*)$", re.I)
 ANSWER_RE = re.compile(r"(?im)^[ \t]*correct[ \t]+answer[ \t]*[:：-]?[ \t]*\(?[ \t]*([A-D])\b")
 MISSED_RE = re.compile(r"(?i)you\s+missed\s+this\s+question")
 
@@ -14,10 +15,10 @@ def _clean_screen_chrome(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Strip status-bar/counter artifacts while preserving the actual question text."""
     cleaned: list[dict[str, Any]] = []
     chrome_prefix = re.compile(
-        r"(?i)^\\s*(?:[01]?\\d|2[0-3]):[0-5]\\d\\s*(?:am|pm)?\\s+"
-        r"(?:(?:mon|tue|wed|thu|fri|sat|sun)\\w*\\s+)?"
-        r"(?:\\d{1,2}\\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\w*"
-        r"(?:\\s+\\d{2,4})?\\s*"
+        r"(?i)^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*(?:am|pm)?\s+"
+        r"(?:(?:mon|tue|wed|thu|fri|sat|sun)\w*\s+)?"
+        r"(?:\d{1,2}\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*"
+        r"(?:\s+\d{2,4})?\s*"
     )
     for row in rows:
         text = str(row.get("text", "")).strip()
@@ -29,12 +30,12 @@ def _clean_screen_chrome(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         # clock/date prefix; do not discard the remainder of the same line.
         text = chrome_prefix.sub(" ", text)
         # Remove standalone battery/time debris left after prefix cleanup.
-        text = re.sub(r"(?i)^\\s*(?:=|@|%|\\|)+\\s*", " ", text)
-        text = re.sub(r"\\s+", " ", text).strip(" =@|·{}%")
+        text = re.sub(r"(?i)^\s*(?:=|@|%|\|)+\s*", " ", text)
+        text = re.sub(r"\s+", " ", text).strip(" =@|·{}%")
         if not text:
             continue
         # Pure status-bar fragments have no meaningful question text.
-        if re.fullmatch(r"(?i)(?:\\d{1,3}%?|[=*@|·\\s]+|(?:question\\s*)?\\d{1,4}\\s*(?:of\\s*\\d{1,4})?)", text):
+        if re.fullmatch(r"(?i)(?:\d{1,3}%?|[=*@|·\s]+|(?:question\s*)?\d{1,4}\s*(?:of\s*\d{1,4})?)", text):
             continue
         cleaned.append({**row, "text": text})
     return cleaned
@@ -96,11 +97,29 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     warnings: list[str] = []
     all_text = "\n".join(str(r.get("text", "")).strip() for r in ordered if r.get("text"))
     missed = bool(MISSED_RE.search(all_text))
-    option_starts: dict[str, int] = {}
+    # First identify explicit A./A)/A: option labels. Only use the looser
+    # "A text" form if at least three distinct A-D labels appear, preventing
+    # clinical prose like "A 62-year-old man..." from becoming option A.
+    option_matches: dict[int, re.Match[str]] = {}
+    explicit_letters: set[str] = set()
     for i, row in enumerate(ordered):
         match = OPTION_RE.match(str(row.get("text", "")))
         if match:
-            option_starts.setdefault(match.group(1).upper(), i)
+            option_matches[i] = match
+            explicit_letters.add(match.group(1).upper())
+    if len(explicit_letters) < 3:
+        loose: dict[int, re.Match[str]] = {}
+        loose_letters: set[str] = set()
+        for i, row in enumerate(ordered):
+            match = LOOSE_OPTION_RE.match(str(row.get("text", "")))
+            if match:
+                loose[i] = match
+                loose_letters.add(match.group(1).upper())
+        if len(loose_letters) >= 3:
+            option_matches.update({i:m for i,m in loose.items() if i not in option_matches})
+    option_starts: dict[str, int] = {}
+    for i, match in option_matches.items():
+        option_starts.setdefault(match.group(1).upper(), i)
     if not all(k in option_starts for k in "ABCD"):
         warnings.append("Could not confidently identify all four option boundaries")
     d_index = option_starts.get("D")
@@ -128,7 +147,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
         text = str(row.get("text", "")).strip()
         if not text:
             continue
-        match = OPTION_RE.match(text)
+        match = option_matches.get(idx)
         if match:
             current = match.group(1).upper()
             options.setdefault(current, match.group(2).strip())
