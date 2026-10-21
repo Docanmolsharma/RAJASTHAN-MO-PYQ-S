@@ -25,7 +25,7 @@ Open `capture-studio.html` from the same deployed CORTEX origin so it can reuse 
 
 ## Upload and archive safety limits
 
-The API reads multipart uploads in 1 MiB chunks and rejects the request once the aggregate upload limit is crossed. Defaults can be tuned with `GT_MAX_UPLOAD_BYTES` (512 MiB), `GT_MAX_FILES` (500 images), `GT_MAX_ARCHIVE_BYTES` (2 GiB compressed ZIP), `GT_MAX_MEMBER_BYTES` (40 MiB per image), and `GT_MAX_TOTAL_EXTRACTED_BYTES` (256 MiB across supported images extracted from one ZIP). ZIP limits protect against archives whose expanded contents are much larger than their uploaded size. Set limits based on the memory and disk capacity of the deployment; increasing them does not guarantee the host can process a batch safely.
+The API reads multipart uploads in 1 MiB chunks and rejects the request once the aggregate upload limit is crossed. It creates per-job directories only after upload/archive validation succeeds, avoiding orphan job folders for rejected requests. Defaults can be tuned with `GT_MAX_UPLOAD_BYTES` (512 MiB), `GT_MAX_FILES` (500 images), `GT_MAX_ARCHIVE_BYTES` (2 GiB compressed ZIP), `GT_MAX_MEMBER_BYTES` (40 MiB per image), and `GT_MAX_TOTAL_EXTRACTED_BYTES` (256 MiB across supported images extracted from one ZIP). ZIP limits protect against archives whose expanded contents are much larger than their uploaded size. Set limits based on the memory and disk capacity of the deployment; increasing them does not guarantee the host can process a batch safely.
 
 ## API
 - `POST /api/jobs`: multi-image/ZIP capture; form fields `gt_id`, `expected_questions`, `source_app`, `files`.
@@ -36,6 +36,9 @@ The API reads multipart uploads in 1 MiB chunks and rejects the request once the
 - `GET /api/jobs/{id}/download`: per-batch JSON export.
 
 ## Run tests
+
+The test suite includes parser and storage unit tests, upload/ZIP limit tests, plus API-level tests for capture-to-attempt persistence, recovery after the local JSON file is removed, and cross-user job isolation. The API flow tests mock OCR/image decoding so they validate application plumbing deterministically; they do not replace calibration on real screenshots.
+
 ```bash
 cd gt-extractor/backend
 pip install pytest
