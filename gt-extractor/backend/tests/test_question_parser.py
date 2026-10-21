@@ -92,3 +92,23 @@ def test_wrapped_option_d_is_preserved_without_copying_explanation():
     assert parsed["correct_answer"] == "D"
     assert parsed["explanation"] is None
     assert "private solution text" not in str(parsed)
+
+
+def test_missed_banner_is_not_appended_to_option_d():
+    rows = [
+        row("Question stem", 1),
+        row("A. alpha", 10),
+        row("B. beta", 20),
+        row("C. gamma", 30),
+        row("D. delta", 40, "green"),
+        row("You missed this question", 50),
+        row("Correct Answer: D", 60),
+        row("Explanation: private solution text", 70),
+    ]
+    parsed = parse_question_regions(rows)
+    assert parsed["options"]["D"] == "delta"
+    assert parsed["selected_answer"] is None
+    assert parsed["correct_answer"] == "D"
+    assert parsed["result"] == "unattempted"
+    assert "You missed this question" not in str(parsed)
+    assert "private solution text" not in str(parsed)
