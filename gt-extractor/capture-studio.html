@@ -10,7 +10,8 @@ const SUPABASE_URL="https://mtqmccfakojeruntimbi.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_U4ObHHggF40KVkkOCISA7A__4sBRD6p";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const $=id=>document.getElementById(id);let session=null;
-const letterNum=v=>({"A":1,"B":2,"C":3,"D":4}[v]||null);\nfunction mimeFor(file){if(file.type)return file.type;const ext=(file.name.split('.').pop()||'').toLowerCase();return ({jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',heic:'image/heic',heif:'image/heif'}[ext]||'application/octet-stream')}
+const letterNum=v=>({"A":1,"B":2,"C":3,"D":4}[v]||null);
+function mimeFor(file){if(file.type)return file.type;const ext=(file.name.split('.').pop()||'').toLowerCase();return ({jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',heic:'image/heic',heif:'image/heif'}[ext]||'application/octet-stream')}
 async function init(){const {data,error}=await sb.auth.getSession();session=data?.session||null;if(error||!session){$('auth').textContent='Not signed in. Open the CORTEX app, sign in, then open this page in the same browser and domain.';return}
 $('auth').textContent='Signed in · '+(session.user.email||'CORTEX account')+' · private saves enabled';$('capture').disabled=false}
 $('files').addEventListener('change',()=>{$('fileInfo').textContent=[...$('files').files].length+' image(s) selected'});
