@@ -90,6 +90,36 @@ def _logical_lines(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return result
 
 
+def _join_standalone_option_badges(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Join a separately OCR'd A-D badge with option text on the same visual row."""
+    result: list[dict[str, Any]] = []
+    i = 0
+    while i < len(rows):
+        row = rows[i]
+        label = re.fullmatch(r"\s*([A-D])\s*", str(row.get("text", "")), re.I)
+        if label and i + 1 < len(rows):
+            nxt = rows[i + 1]
+            label_box = row.get("bbox", [])
+            next_box = nxt.get("bbox", [])
+            label_y = _row_y(row)
+            next_y = _row_y(nxt)
+            label_height = max((p[1] for p in label_box), default=label_y) - label_y
+            # Only merge adjacent OCR rows when their vertical positions indicate
+            # one visual option row; never consume a later wrapped option line.
+            if next_box and abs(next_y - label_y) <= max(14, label_height * 1.8):
+                merged = {**nxt, "text": f"{label.group(1).upper()}) {str(nxt.get('text', '')).strip()}"}
+                merged["bbox"] = list(label_box) + list(next_box)
+                marker = _marker(row)
+                if marker:
+                    merged["option_marker"] = marker
+                result.append(merged)
+                i += 2
+                continue
+        result.append(row)
+        i += 1
+    return result
+
+
 def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Parse question text conservatively and use explicit review-screen signals.
 
@@ -97,7 +127,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     image-colour detector has classified the option badge. Plain OCR text alone
     is not treated as proof of a user's selected option.
     """
-    ordered = sorted(_clean_screen_chrome(_logical_lines(ocr_rows)), key=lambda r: (_row_y(r), _row_x(r)))
+    ordered = sorted(_join_standalone_option_badges(_clean_screen_chrome(_logical_lines(ocr_rows))), key=lambda r: (_row_y(r), _row_x(r)))
     warnings: list[str] = []
     all_text = "\n".join(str(r.get("text", "")).strip() for r in ordered if r.get("text"))
     missed = bool(MISSED_RE.search(all_text))
