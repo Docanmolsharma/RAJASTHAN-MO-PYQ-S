@@ -60,10 +60,10 @@ class TesseractOCRService:
         # than loading a deep-learning OCR model into the 512 MB Render instance.
         rgb = np.asarray(image.convert("RGB"))
         original_h, original_w = rgb.shape[:2]
-        # On tall phone/tablet screenshots the top 5.5% is the OS status bar.
+        # On tall phone/tablet screenshots the top 8.5% is the OS status bar.
         # Exclude it before OCR so time/date/battery glyphs cannot contaminate
         # the first medical stem line. Keep coordinates mapped to the original image.
-        crop_top = int(original_h * 0.055) if original_h >= original_w * 1.15 else 0
+        crop_top = int(original_h * 0.085) if original_h >= original_w * 1.15 else 0
         working = rgb[crop_top:, :, :] if crop_top else rgb
         h, w = working.shape[:2]
         scale = min(1.0, 1800.0 / max(h, w))
