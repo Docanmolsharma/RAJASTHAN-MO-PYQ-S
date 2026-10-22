@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Any
 import numpy as np
+from PIL import Image, ImageEnhance, ImageOps
 
 class OCRUnavailable(RuntimeError):
     pass
@@ -60,11 +61,18 @@ class TesseractOCRService:
         # than loading a deep-learning OCR model into the 512 MB Render instance.
         rgb = np.asarray(image.convert("RGB"))
         original_h, original_w = rgb.shape[:2]
-        # On tall phone/tablet screenshots the top 8.5% is the OS status bar.
+        # On tall phone/tablet screenshots the top 15% is the OS status bar.
         # Exclude it before OCR so time/date/battery glyphs cannot contaminate
         # the first medical stem line. Keep coordinates mapped to the original image.
-        crop_top = int(original_h * 0.085) if original_h >= original_w * 1.15 else 0
+        crop_top = int(original_h * 0.15) if original_h >= original_w * 1.15 else 0
         working = rgb[crop_top:, :, :] if crop_top else rgb
+        # Phone/tablet photos often have soft text and coloured answer badges.
+        # Grayscale + autocontrast + sharpening improves glyph separation (notably
+        # green B badges) while the separate marker detector still uses the original image.
+        prepared = Image.fromarray(working).convert("L")
+        prepared = ImageOps.autocontrast(prepared)
+        prepared = ImageEnhance.Sharpness(prepared).enhance(2.0)
+        working = np.asarray(prepared)
         h, w = working.shape[:2]
         scale = min(1.0, 1800.0 / max(h, w))
         if scale < 1.0:
