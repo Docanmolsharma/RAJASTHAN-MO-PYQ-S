@@ -20,10 +20,10 @@ def test_green_option_badge_detected():
 def test_red_option_badge_detected():
     image = make_badge((220, 45, 55))
     box = [[16, 10], [25, 10], [25, 24], [16, 24]]
-    assert PaddleOCRService._option_marker(image, "A. Option text", box) == "red"
+    assert TesseractOCRService._option_marker(image, "A. Option text", box) == "red"
 
 
 def test_neutral_option_has_no_marker():
     image = make_badge((220, 220, 220))
     box = [[16, 10], [25, 10], [25, 24], [16, 24]]
-    assert PaddleOCRService._option_marker(image, "A. Option text", box) is None
+    assert TesseractOCRService._option_marker(image, "A. Option text", box) is None
