@@ -210,8 +210,10 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     answer_match = None
     for answer_row in ordered:
         answer_text = str(answer_row.get("text", "")).strip()
-        answer_match = ANSWER_RE.search(answer_text) or re.search(
-            r"(?i)^correct\s+answer\s*[:：-]?\s*\(?\s*([A-D])\b",
+        # Match the explicit answer label even when OCR adds text after the
+        # option letter or punctuation differs from the canonical format.
+        answer_match = re.search(
+            r"(?i)correct\s+answer\s*[:：-]?\s*\(?\s*([A-D])(?:\b|\))",
             answer_text,
         )
         if answer_match:
