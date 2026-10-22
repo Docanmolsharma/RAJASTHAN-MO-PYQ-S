@@ -18,6 +18,7 @@ RUN python -m pip install --upgrade pip \
     && python -m pip install -r requirements-render.txt
 
 COPY app ./app
+COPY capture-studio.html ./capture-studio.html
 RUN mkdir -p /app/data/uploads /app/data/previews /app/data/results
 
 EXPOSE 8000
