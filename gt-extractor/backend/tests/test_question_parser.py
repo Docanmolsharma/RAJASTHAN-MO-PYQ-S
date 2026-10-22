@@ -277,3 +277,23 @@ def test_realistic_question_with_missing_d_badge_glyph():
     assert parsed["selected_answer"] == "D"
     assert parsed["result"] == "incorrect"
     assert "Explanation" not in str(parsed)
+
+
+
+def test_standalone_option_badges_are_joined_to_same_row_text():
+    rows = [
+        row("A 62-year-old man presents with erectile dysfunction", 1),
+        row("A", 20, "red"), row("Misoprostol [10%]", 20),
+        row("B", 30, "green"), row("Alprostadil [72%]", 30),
+        row("C", 40), row("Carboprost [10%]", 40),
+        row("D", 50, "red"), row("Latanoprost [8%]", 50),
+        row("Solution", 60), row("Correct Answer: B", 70),
+    ]
+    parsed = parse_question_regions(rows)
+    assert parsed["options"]["A"].startswith("Misoprostol")
+    assert parsed["options"]["B"].startswith("Alprostadil")
+    assert parsed["options"]["C"].startswith("Carboprost")
+    assert parsed["options"]["D"].startswith("Latanoprost")
+    assert parsed["correct_answer"] == "B"
+    assert parsed["selected_answer"] == "D"
+    assert parsed["result"] == "incorrect"
