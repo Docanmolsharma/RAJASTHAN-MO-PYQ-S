@@ -317,3 +317,22 @@ def test_fallback_recovers_options_with_no_punctuation_without_misreading_age_st
         "D": "Latanoprost",
     }
     assert parsed["correct_answer"] == "B"
+
+
+def test_collapsed_inline_ocr_option_badges_split_without_misreading_stem():
+    rows = [
+        row("A 62-year-old man presents with erectile dysfunction", 1),
+        row("A Misoprostol [10%] G Alprostadil [72%] C Carboprost [10%] D Latanoprost [8%]", 20),
+        row("72% got this correct", 30),
+        row("Solution", 40),
+        row("Correct Answer: B) Alprostadil", 50),
+    ]
+    parsed = parse_question_regions(rows)
+    assert "62-year-old man" in parsed["question_text"]
+    assert parsed["options"] == {
+        "A": "Misoprostol [10%",
+        "B": "Alprostadil [72%",
+        "C": "Carboprost [10%",
+        "D": "Latanoprost [8%",
+    }
+    assert parsed["correct_answer"] == "B"
