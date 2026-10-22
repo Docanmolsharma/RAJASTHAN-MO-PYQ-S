@@ -1,0 +1,6 @@
+# OCR-enabled Render Docker deployment dependencies.
+# The Dockerfile installs the system tesseract-ocr package; pip installs its Python adapter.
+-r requirements.txt
+
+numpy>=1.24,<2.0
+pytesseract>=0.3.13,<1.0

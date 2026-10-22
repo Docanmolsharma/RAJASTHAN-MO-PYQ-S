@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: cortex-gt-extractor
+    runtime: docker
+    plan: free
+    dockerfilePath: ./gt-extractor/backend/Dockerfile
+    dockerContext: ./gt-extractor/backend
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: GT_ALLOWED_ORIGINS
+        value: https://docanmolsharma.github.io
+      - key: GT_DATA_DIR
+        value: /tmp/cortex-data
+      - key: GT_DB_PATH
+        value: /tmp/cortex-data/cortex_extractor.sqlite3
+      - key: GT_MAX_UPLOAD_BYTES
+        value: "536870912"
+      - key: GT_MAX_FILES
+        value: "500"
+      - key: GT_MAX_ARCHIVE_BYTES
+        value: "2147483648"
+      - key: GT_MAX_MEMBER_BYTES
+        value: "41943040"
+      - key: GT_MAX_TOTAL_EXTRACTED_BYTES
+        value: "268435456"
