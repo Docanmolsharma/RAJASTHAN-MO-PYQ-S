@@ -165,6 +165,29 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     for i, match in option_matches.items():
         option_starts.setdefault(match.group(1).upper(), i)
 
+    # Tesseract can drop punctuation from A-D badges. Use a conservative
+    # fallback only when the primary parser found fewer than three labels.
+    # Do not classify the common stem opening "A 35-year-old..." as option A.
+    if len(option_starts) < 3:
+        fallback_matches: dict[int, re.Match[str]] = {}
+        fallback_letters: set[str] = set()
+        for i, row in enumerate(content_rows):
+            text = str(row.get("text", "")).strip()
+            match = re.match(r"(?i)^([A-D])(?:[ _€|>.)\]:-]+\s*|\s+)([A-Za-z(].*)$", text)
+            if not match:
+                continue
+            tail = match.group(2).strip()
+            if re.match(r"(?i)^\d{1,3}[- ]year", tail):
+                continue
+            fallback_matches[i] = match
+            fallback_letters.add(match.group(1).upper())
+        if len(fallback_letters) >= 3:
+            for i, match in fallback_matches.items():
+                option_matches.setdefault(i, match)
+            option_starts = {}
+            for i, match in option_matches.items():
+                option_starts.setdefault(match.group(1).upper(), i)
+
     # If OCR entirely loses the D badge (e.g. it reads "[> | Latanoprost"),
     # recover D conservatively only when A/B/C were detected and the next row
     # after C is a short option-like row before the review panel.
