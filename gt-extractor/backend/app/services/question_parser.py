@@ -31,7 +31,7 @@ def _clean_screen_chrome(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         text = chrome_prefix.sub(" ", text)
         # OCR may misread a 67% battery icon as "0167%"; strip that debris only
         # at the start of the remaining line, after the clock/date prefix.
-        text = re.sub(r"(?i)^\\s*\\d{1,4}\\s*%\\s*[@=|·]*\\s*", " ", text)
+        text = re.sub(r"(?i)^\s*\d{1,4}\s*%\s*[@=|·]*\s*", " ", text)
         # Remove standalone battery/time debris left after prefix cleanup.
         text = re.sub(r"(?i)^\s*(?:=|@|%|\|)+\s*", " ", text)
         text = re.sub(r"\s+", " ", text).strip(" =@|·{}%")
