@@ -130,7 +130,7 @@ def _split_inline_option_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]
     or a clinical stem beginning with "A 35-year-old".
     """
     result: list[dict[str, Any]] = []
-    badge = re.compile(r"(?<!\\S)([ABCDG])(?:[_€|>.)\\]:-]*\\s+)(?=[A-Za-z(])")
+    badge = re.compile(r"(?<!\S)([ABCDG])(?:[_€|>.)\]:-]*\s+)(?=[A-Za-z(])")
     for row in rows:
         text = str(row.get("text", "")).strip()
         matches = list(badge.finditer(text))
