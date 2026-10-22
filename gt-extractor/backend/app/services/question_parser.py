@@ -4,7 +4,8 @@ import re
 from typing import Any
 
 OPTION_RE = re.compile(r"^\s*([A-D])\s*[).:]\s*(.*)$", re.I)
-LOOSE_OPTION_RE = re.compile(r"^\s*([A-D])\s+([A-Za-z(].*)$", re.I)
+LOOSE_OPTION_RE = re.compile(r"^\s*([A-D])(?:\s*[_€|>]+\s*|\s+)([A-Za-z(].*)$", re.I)
+REVIEW_START_RE = re.compile(r"(?i)^\s*(?:(?:\d{1,3}%\s*)?got this correct|solution\b|explanation\s*:|correct\s+answer\b|tags based on question\b)")
 ANSWER_RE = re.compile(r"(?im)^[ \t]*correct[ \t]+answer[ \t]*[:：-]?[ \t]*\(?[ \t]*([A-D])\b")
 MISSED_RE = re.compile(r"(?i)you\s+missed\s+this\s+question")
 
@@ -100,12 +101,21 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     warnings: list[str] = []
     all_text = "\n".join(str(r.get("text", "")).strip() for r in ordered if r.get("text"))
     missed = bool(MISSED_RE.search(all_text))
-    # First identify explicit A./A)/A: option labels. Only use the looser
-    # "A text" form if at least three distinct A-D labels appear, preventing
-    # clinical prose like "A 62-year-old man..." from becoming option A.
+    # Keep answer/explanation evidence in all_text, but parse question content only
+    # until the review/solution panel begins. This prevents explanation paragraphs
+    # being appended to option D when its visual badge was not OCR-recognized.
+    content_rows: list[dict[str, Any]] = []
+    for row in ordered:
+        text = str(row.get("text", "")).strip()
+        if REVIEW_START_RE.search(text) or MISSED_RE.search(text):
+            break
+        content_rows.append(row)
+
+    # Detect explicit labels first. OCR often reads coloured badges as C_ / C€,
+    # so allow a small set of badge artifacts only in the loose-label fallback.
     option_matches: dict[int, re.Match[str]] = {}
     explicit_letters: set[str] = set()
-    for i, row in enumerate(ordered):
+    for i, row in enumerate(content_rows):
         match = OPTION_RE.match(str(row.get("text", "")))
         if match:
             option_matches[i] = match
@@ -113,35 +123,43 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     if len(explicit_letters) < 3:
         loose: dict[int, re.Match[str]] = {}
         loose_letters: set[str] = set()
-        for i, row in enumerate(ordered):
+        for i, row in enumerate(content_rows):
             match = LOOSE_OPTION_RE.match(str(row.get("text", "")))
             if match:
                 loose[i] = match
                 loose_letters.add(match.group(1).upper())
         if len(loose_letters) >= 3:
-            option_matches.update({i:m for i,m in loose.items() if i not in option_matches})
+            option_matches.update({i: m for i, m in loose.items() if i not in option_matches})
+
     option_starts: dict[str, int] = {}
     for i, match in option_matches.items():
         option_starts.setdefault(match.group(1).upper(), i)
+
+    # If OCR entirely loses the D badge (e.g. it reads "[> | Latanoprost"),
+    # recover D conservatively only when A/B/C were detected and the next row
+    # after C is a short option-like row before the review panel.
+    if "D" not in option_starts and all(k in option_starts for k in "ABC"):
+        c_idx = option_starts["C"]
+        candidate_idx = c_idx + 1
+        if candidate_idx < len(content_rows):
+            candidate_text = str(content_rows[candidate_idx].get("text", "")).strip()
+            cleaned_candidate = re.sub(r"^[\\[<>{}|!>Il1\\s]+", "", candidate_text).strip()
+            if cleaned_candidate and len(cleaned_candidate) <= 100 and not re.match(r"(?i)^(?:which|why|the following|correct answer|solution|explanation)", cleaned_candidate):
+                option_matches[candidate_idx] = re.match(r"(?s)^D\\s*(.*)$", "D " + cleaned_candidate)
+                option_starts["D"] = candidate_idx
+
     if not all(k in option_starts for k in "ABCD"):
         warnings.append("Could not confidently identify all four option boundaries")
     d_index = option_starts.get("D")
-    # Keep wrapped D-option lines, but stop before explicit answer/explanation metadata.
-    # This avoids the old bug where option D was always truncated to its first OCR line.
     explanation_start = re.compile(
-        r"(?i)^\s*(?:explanation|solution|discussion|correct\s+answer|answer\s+key|reference|why\s+others|pearls?)\s*(?:[:：-].*|$)"
+        r"(?i)^\\s*(?:explanation|solution|discussion|correct\\s+answer|answer\\s+key|reference|why\\s+others|pearls?)\\s*(?:[:：-].*|$)"
     )
     included: list[dict[str, Any]] = []
-    for idx, row in enumerate(ordered):
-        text = str(row.get("text", "")).strip()
-        # Review banners are evidence for attempt status, not part of Option D.
-        # Keep them in all_text for detection, but exclude them from question content.
-        if d_index is not None and idx > d_index and (
-            explanation_start.search(text) or MISSED_RE.search(text)
-            or re.match(r"(?i)^\s*(?:incorrect|correct)\s+answer\s*$", text)
-        ):
+    for idx, row in enumerate(content_rows):
+        if d_index is not None and idx > d_index and explanation_start.search(str(row.get("text", ""))):
             break
         included.append(row)
+
     options: dict[str, str] = {}
     option_rows: dict[str, dict[str, Any]] = {}
     current: str | None = None
@@ -193,7 +211,11 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
         result = "unknown"
         warnings.append("Answer/attempt status could not be established from reliable screenshot signals")
     question_text = " ".join(stem).strip()
-    final_options = {k: options[k].strip() for k in "ABCD" if options.get(k, "").strip()}
+    # Remove per-option response percentages from the source app's answer distribution.
+    final_options = {
+        k: re.sub(r"\s*[\[(]?\s*\d{1,3}%\s*[\])]?\s*$", "", options[k]).strip()
+        for k in "ABCD" if options.get(k, "").strip()
+    }
     if not question_text or len(question_text) < 18:
         warnings.append("Question stem is missing or suspiciously short; manual review required")
     if len(final_options) != 4:
