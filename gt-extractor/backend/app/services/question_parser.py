@@ -207,7 +207,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
             options[current] = (options.get(current, "") + " " + text).strip()
         else:
             stem.append(text)
-    answer_match = ANSWER_RE.search(all_text) or re.search(r"(?i)correct\\s+answer\\s*[:：-]?\\s*\\(?\\s*([A-D])\\b", all_text)
+    answer_match = ANSWER_RE.search(all_text) or re.search(r"(?i)correct\s+answer\s*[:：-]?\s*\(?\s*([A-D])\b", all_text)
     green_options = [letter for letter, row in option_rows.items() if _marker(row) == "green"]
     red_options = [letter for letter, row in option_rows.items() if _marker(row) == "red"]
     explicit_correct = answer_match.group(1).upper() if answer_match else None
