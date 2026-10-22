@@ -98,7 +98,7 @@ class TesseractOCRService:
             x0, y0 = x / scale, y / scale + crop_top
             x1, y1 = (x + bw) / scale, (y + bh) / scale + crop_top
             box = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
-            row = {"text": text, "bbox": [[float(a*scale), float((b-crop_top)*scale)] for a,b in box], "confidence": confidence, "block_num": int(data["block_num"][i]), "par_num": int(data["par_num"][i]), "line_num": int(data["line_num"][i])}
+            row = {"text": text, "bbox": [[float(a), float(b)] for a,b in box], "confidence": confidence, "block_num": int(data["block_num"][i]), "par_num": int(data["par_num"][i]), "line_num": int(data["line_num"][i])}
             marker = self._option_marker(image, text, box)
             if marker:
                 row["option_marker"] = marker
