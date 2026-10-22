@@ -206,3 +206,23 @@ def test_status_bar_and_counter_do_not_delete_clinical_stem():
     assert "62-year-old man with diabetes" in parsed["question_text"]
     assert "12:58PM" not in parsed["question_text"]
     assert "Question 190 of 200" not in parsed["question_text"]
+
+
+def test_battery_artifact_is_removed_without_dropping_clinical_stem():
+    rows = [
+        row("0167% @ A 62-year-old man with diabetes and hypertension", 1),
+        row("A. alpha", 20), row("B. beta", 30), row("C. gamma", 40), row("D. delta", 50),
+    ]
+    parsed = parse_question_regions(rows)
+    assert "0167%" not in parsed["question_text"]
+    assert "62-year-old man" in parsed["question_text"]
+
+
+def test_incomplete_options_are_explicitly_flagged():
+    parsed = parse_question_regions([
+        row("A 35-year-old patient presents with acute chest pain", 1),
+        row("A. alpha", 20), row("B. beta", 30),
+    ])
+    assert len(parsed["options"]) < 4
+    assert any("options were extracted" in warning for warning in parsed["warnings"])
+    assert parsed["review_status"] == "pending"
