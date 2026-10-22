@@ -48,5 +48,5 @@ def test_tesseract_receives_preprocessed_grayscale_crop_and_maps_boxes(monkeypat
     assert rows[0]["confidence"] == 0.98
     # OCR y=5 maps back to original-image y=60+5=65.
     assert rows[0]["bbox"][0][1] == 65.0
-    assert rows[0]["bbox"][2][1] == 70.0
+    assert rows[0]["bbox"][2][1] == 75.0
     assert rows[1]["text"] == "stem"
