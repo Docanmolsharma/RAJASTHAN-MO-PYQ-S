@@ -297,3 +297,23 @@ def test_standalone_option_badges_are_joined_to_same_row_text():
     assert parsed["correct_answer"] == "B"
     assert parsed["selected_answer"] == "D"
     assert parsed["result"] == "incorrect"
+
+
+def test_fallback_recovers_options_with_no_punctuation_without_misreading_age_stem():
+    rows = [
+        row("A 62-year-old man presents with erectile dysfunction", 1),
+        row("A Misoprostol", 20),
+        row("B Alprostadil", 30),
+        row("C Carboprost", 40),
+        row("D Latanoprost", 50),
+        row("Correct Answer: B", 60),
+    ]
+    parsed = parse_question_regions(rows)
+    assert "62-year-old man" in parsed["question_text"]
+    assert parsed["options"] == {
+        "A": "Misoprostol",
+        "B": "Alprostadil",
+        "C": "Carboprost",
+        "D": "Latanoprost",
+    }
+    assert parsed["correct_answer"] == "B"
