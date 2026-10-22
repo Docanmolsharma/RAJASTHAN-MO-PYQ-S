@@ -192,6 +192,14 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     else:
         result = "unknown"
         warnings.append("Answer/attempt status could not be established from reliable screenshot signals")
+    question_text = " ".join(stem).strip()
+    final_options = {k: options[k].strip() for k in "ABCD" if options.get(k, "").strip()}
+    if not question_text or len(question_text) < 18:
+        warnings.append("Question stem is missing or suspiciously short; manual review required")
+    if len(final_options) != 4:
+        warnings.append(f"Only {len(final_options)} of 4 options were extracted; manual review required")
+    if any(re.search(r"(?i)(?:\\b\\d{1,3}%\\b|\\bquestion\\s*\\d+\\s+of\\s+\\d+\\b|\\b(?:am|pm)\\s+(?:mon|tue|wed|thu|fri)\\b)", value) for value in [question_text, *final_options.values()]):
+        warnings.append("Possible screen chrome remains in extracted text; manual review required")
     if d_index is None:
         warnings.append("Explanation exclusion boundary is uncertain; review required")
-    return {"question_text": " ".join(stem).strip(), "options": {k: options[k] for k in "ABCD" if k in options}, "correct_answer": correct_answer, "selected_answer": selected_answer, "result": result, "explanation": None, "warnings": warnings, "review_status": "pending" if warnings or result == "unknown" else "needs_review"}
+    return {"question_text": question_text, "options": final_options, "correct_answer": correct_answer, "selected_answer": selected_answer, "result": result, "explanation": None, "warnings": list(dict.fromkeys(warnings)), "review_status": "pending"}
