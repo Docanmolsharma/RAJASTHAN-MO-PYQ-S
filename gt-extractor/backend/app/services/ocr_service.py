@@ -61,10 +61,10 @@ class TesseractOCRService:
         # than loading a deep-learning OCR model into the 512 MB Render instance.
         rgb = np.asarray(image.convert("RGB"))
         original_h, original_w = rgb.shape[:2]
-        # On tall phone/tablet screenshots the top 15% is the OS status bar.
+        # On tall phone/tablet screenshots the top 20% is the OS status bar.
         # Exclude it before OCR so time/date/battery glyphs cannot contaminate
         # the first medical stem line. Keep coordinates mapped to the original image.
-        crop_top = int(original_h * 0.15) if original_h >= original_w * 1.15 else 0
+        crop_top = int(original_h * 0.20) if original_h >= original_w * 1.15 else 0
         working = rgb[crop_top:, :, :] if crop_top else rgb
         # Phone/tablet photos often have soft text and coloured answer badges.
         # Grayscale + autocontrast + sharpening improves glyph separation (notably
