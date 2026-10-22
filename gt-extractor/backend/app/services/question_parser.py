@@ -211,7 +211,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     for answer_row in ordered:
         answer_text = str(answer_row.get("text", "")).strip()
         answer_match = ANSWER_RE.search(answer_text) or re.search(
-            r"(?i)^correct[ \\t]+answer[ \\t]*[:：-]?[ \\t]*\\(?[ \\t]*([A-D])\\b",
+            r"(?i)^correct\s+answer\s*[:：-]?\s*\(?\s*([A-D])\b",
             answer_text,
         )
         if answer_match:
