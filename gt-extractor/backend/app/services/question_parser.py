@@ -120,6 +120,40 @@ def _join_standalone_option_badges(rows: list[dict[str, Any]]) -> list[dict[str,
     return result
 
 
+
+def _split_inline_option_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Split a single OCR line that has collapsed all four option badges together.
+
+    This is intentionally narrow: only split when the whole line contains the
+    ordered A/B/C/D sequence, allowing a common OCR confusion G -> B, and each
+    badge is followed by option-like text. This avoids splitting ordinary prose
+    or a clinical stem beginning with "A 35-year-old".
+    """
+    result: list[dict[str, Any]] = []
+    badge = re.compile(r"(?<!\\S)([ABCDG])(?:[_€|>.)\\]:-]*\\s+)(?=[A-Za-z(])")
+    for row in rows:
+        text = str(row.get("text", "")).strip()
+        matches = list(badge.finditer(text))
+        if len(matches) < 3:
+            result.append(row)
+            continue
+        labels = [("B" if m.group(1) == "G" else m.group(1)) for m in matches]
+        # A collapsed line is split only when labels map to A, B, C, D in order.
+        if labels != ["A", "B", "C", "D"]:
+            result.append(row)
+            continue
+        pieces: list[dict[str, Any]] = []
+        for pos, match in enumerate(matches):
+            start = match.end()
+            end = matches[pos + 1].start() if pos + 1 < len(matches) else len(text)
+            option_text = text[start:end].strip(" _€|>.)]:-")
+            if not option_text:
+                pieces = []
+                break
+            pieces.append({**row, "text": f"{labels[pos]}) {option_text}"})
+        result.extend(pieces or [row])
+    return result
+
 def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Parse question text conservatively and use explicit review-screen signals.
 
@@ -127,7 +161,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     image-colour detector has classified the option badge. Plain OCR text alone
     is not treated as proof of a user's selected option.
     """
-    ordered = sorted(_join_standalone_option_badges(_clean_screen_chrome(_logical_lines(ocr_rows))), key=lambda r: (_row_y(r), _row_x(r)))
+    ordered = sorted(_split_inline_option_rows(_join_standalone_option_badges(_clean_screen_chrome(_logical_lines(ocr_rows)))), key=lambda r: (_row_y(r), _row_x(r)))
     warnings: list[str] = []
     all_text = "\n".join(str(r.get("text", "")).strip() for r in ordered if r.get("text"))
     missed = bool(MISSED_RE.search(all_text))
