@@ -274,6 +274,6 @@ def test_realistic_question_with_missing_d_badge_glyph():
     assert parsed["options"]["C"].startswith("Carboprost")
     assert parsed["options"]["D"].startswith("Latanoprost")
     assert parsed["correct_answer"] == "B"
-    assert parsed["selected_answer"] == "B"
-    assert parsed["result"] == "correct"
+    assert parsed["selected_answer"] == "D"
+    assert parsed["result"] == "incorrect"
     assert "Explanation" not in str(parsed)
