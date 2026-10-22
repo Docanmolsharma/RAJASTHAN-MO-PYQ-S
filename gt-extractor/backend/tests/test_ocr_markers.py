@@ -27,3 +27,9 @@ def test_neutral_option_has_no_marker():
     image = make_badge((220, 220, 220))
     box = [[16, 10], [25, 10], [25, 24], [16, 24]]
     assert TesseractOCRService._option_marker(image, "A. Option text", box) is None
+
+
+def test_standalone_option_badge_letter_detected():
+    image = make_badge((35, 170, 80))
+    box = [[16, 10], [25, 10], [25, 24], [16, 24]]
+    assert TesseractOCRService._option_marker(image, "B", box) == "green"
