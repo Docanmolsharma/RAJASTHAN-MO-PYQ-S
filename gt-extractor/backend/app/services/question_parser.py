@@ -146,7 +146,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
     option_rows: dict[str, dict[str, Any]] = {}
     current: str | None = None
     stem: list[str] = []
-    for row in included:
+    for idx, row in enumerate(included):
         text = str(row.get("text", "")).strip()
         if not text:
             continue
