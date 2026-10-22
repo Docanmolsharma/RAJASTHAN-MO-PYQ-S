@@ -226,3 +226,54 @@ def test_incomplete_options_are_explicitly_flagged():
     assert len(parsed["options"]) < 4
     assert any("options were extracted" in warning for warning in parsed["warnings"])
     assert parsed["review_status"] == "pending"
+
+
+def test_realistic_prep_ladder_question_with_unpunctuated_badges():
+    rows = [
+        row("A 35-year-old man presents to the casualty after being stabbed in the precordial region.", 10),
+        row("He is in shock with elevated jugular venous pressure and muffled heart sounds. Which of", 20),
+        row("the following statements is incorrect?", 30),
+        row("A Cardiac tamponade is the most likely diagnosis [5%]", 40),
+        row("B If an open pneumothorax is suspected, the chest wound should be sealed completely", 50),
+        row("on all four sides with an occlusive dressing [64%]", 60),
+        row("C_ eFAST can identify fluid around the heart [8%]", 70),
+        row("D_ Needle pericardiocentesis is not routinely recommended [23%]", 80),
+        row("64% got this correct", 90),
+        row("Solution", 100),
+        row("Correct Answer: B) If an open pneumothorax is suspected", 110),
+        row("Explanation: do not include this", 120),
+    ]
+    parsed = parse_question_regions(rows)
+    assert "35-year-old man" in parsed["question_text"]
+    assert "statements is incorrect" in parsed["question_text"]
+    assert parsed["options"]["A"].startswith("Cardiac tamponade")
+    assert "all four sides" in parsed["options"]["B"]
+    assert parsed["options"]["C"].startswith("eFAST")
+    assert parsed["options"]["D"].startswith("Needle pericardiocentesis")
+    assert all("%" not in value for value in parsed["options"].values())
+    assert parsed["correct_answer"] == "B"
+    assert "Explanation" not in str(parsed)
+
+
+def test_realistic_question_with_missing_d_badge_glyph():
+    rows = [
+        row("A 62-year-old man with diabetes presents with erectile dysfunction", 10),
+        row("A Misoprostol [10%]", 20),
+        row("B Alprostadil [72%]", 30, "green"),
+        row("C€ Carboprost [10%]", 40),
+        row("[> | Latanoprost [8%]", 50, "red"),
+        row("72% got this correct", 60),
+        row("Solution", 70),
+        row("Correct Answer: B) Alprostadil", 80),
+        row("Explanation: do not include this", 90),
+    ]
+    parsed = parse_question_regions(rows)
+    assert "62-year-old man" in parsed["question_text"]
+    assert parsed["options"]["A"].startswith("Misoprostol")
+    assert parsed["options"]["B"].startswith("Alprostadil")
+    assert parsed["options"]["C"].startswith("Carboprost")
+    assert parsed["options"]["D"].startswith("Latanoprost")
+    assert parsed["correct_answer"] == "B"
+    assert parsed["selected_answer"] == "B"
+    assert parsed["result"] == "correct"
+    assert "Explanation" not in str(parsed)
