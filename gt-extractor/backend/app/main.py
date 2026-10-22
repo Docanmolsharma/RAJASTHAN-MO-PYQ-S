@@ -276,7 +276,7 @@ def patch_attempt_history(attempt_id: str, payload: dict[str, Any], user: dict[s
 @app.get("/capture-studio.html", include_in_schema=False)
 def capture_studio():
     """Serve the Capture Studio page from the sibling file in the gt-extractor project."""
-    page = Path(__file__).resolve().parents[2] / "capture-studio.html"
+    page = Path(__file__).resolve().parents[1] / "capture-studio.html"
     if not page.is_file():
         raise HTTPException(404, "Capture Studio page is not present in this deployment")
     return FileResponse(page, media_type="text/html", headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0", "Pragma": "no-cache", "X-CORTEX-Capture-Studio": "safari-fix-f1aa1a1"})
