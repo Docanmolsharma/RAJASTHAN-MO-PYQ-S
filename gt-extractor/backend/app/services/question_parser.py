@@ -145,7 +145,7 @@ def parse_question_regions(ocr_rows: list[dict[str, Any]]) -> dict[str, Any]:
             candidate_text = str(content_rows[candidate_idx].get("text", "")).strip()
             cleaned_candidate = re.sub(r"^[\[<>{}|!>Il1\s]+", "", candidate_text).strip()
             if cleaned_candidate and len(cleaned_candidate) <= 100 and not re.match(r"(?i)^(?:which|why|the following|correct answer|solution|explanation)", cleaned_candidate):
-                option_matches[candidate_idx] = re.match(r"(?s)^D\s*(.*)$", "D " + cleaned_candidate)
+                option_matches[candidate_idx] = re.match(r"(?s)^(D)\s*(.*)$", "D " + cleaned_candidate)
                 option_starts["D"] = candidate_idx
 
     if not all(k in option_starts for k in "ABCD"):
