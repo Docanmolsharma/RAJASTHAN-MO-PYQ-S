@@ -330,9 +330,9 @@ def test_collapsed_inline_ocr_option_badges_split_without_misreading_stem():
     parsed = parse_question_regions(rows)
     assert "62-year-old man" in parsed["question_text"]
     assert parsed["options"] == {
-        "A": "Misoprostol [10%",
-        "B": "Alprostadil [72%",
-        "C": "Carboprost [10%",
-        "D": "Latanoprost [8%",
+        "A": "Misoprostol",
+        "B": "Alprostadil",
+        "C": "Carboprost",
+        "D": "Latanoprost",
     }
     assert parsed["correct_answer"] == "B"
