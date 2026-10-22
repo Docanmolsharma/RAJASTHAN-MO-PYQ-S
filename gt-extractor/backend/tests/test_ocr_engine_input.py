@@ -37,16 +37,16 @@ def test_tesseract_receives_preprocessed_grayscale_crop_and_maps_boxes(monkeypat
     monkeypatch.setattr(service, "_get_engine", lambda: engine)
     monkeypatch.setattr(service, "_option_marker", staticmethod(lambda image, text, box: None))
 
-    # Portrait screenshot: 15% top status-bar area must be cropped before OCR.
+    # Portrait screenshot: 20% top status-bar area must be cropped before OCR.
     image = Image.new("RGB", (120, 300), (255, 0, 0))
     rows = service.extract(image)
 
     assert isinstance(engine.received, np.ndarray)
-    assert engine.received.shape == (255, 120)
+    assert engine.received.shape == (240, 120)
     assert engine.received.dtype == np.uint8
     assert rows[0]["text"] == "Question"
     assert rows[0]["confidence"] == 0.98
-    # OCR y=5 maps back to original-image y=45+5=50.
-    assert rows[0]["bbox"][0][1] == 50.0
-    assert rows[0]["bbox"][2][1] == 60.0
+    # OCR y=5 maps back to original-image y=60+5=65.
+    assert rows[0]["bbox"][0][1] == 65.0
+    assert rows[0]["bbox"][2][1] == 70.0
     assert rows[1]["text"] == "stem"
