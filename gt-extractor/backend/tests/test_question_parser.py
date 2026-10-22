@@ -283,7 +283,7 @@ def test_realistic_question_with_missing_d_badge_glyph():
 def test_standalone_option_badges_are_joined_to_same_row_text():
     rows = [
         row("A 62-year-old man presents with erectile dysfunction", 1),
-        row("A", 20, "red"), row("Misoprostol [10%]", 20),
+        row("A", 20), row("Misoprostol [10%]", 20),
         row("B", 30, "green"), row("Alprostadil [72%]", 30),
         row("C", 40), row("Carboprost [10%]", 40),
         row("D", 50, "red"), row("Latanoprost [8%]", 50),
